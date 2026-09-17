@@ -1,56 +1,41 @@
-# PROJECT STATE
+# Estado do projeto · v0.2
 
-## Concluído
+## Implementado
 
-- Estrutura Python inicial com CLI e SQLite persistente em `coae/`.
-- Criação, listagem e abertura de projetos persistidos pelos comandos `create-project` e `open-project`.
-- Criação da estrutura inicial de diretórios por projeto: `research`, `script`, `audio`, `transcription`, `storyboard`, `exports` e `logs`.
-- Importação/salvamento de roteiro editável a partir de arquivo TXT/Markdown pelo comando `save-script`.
-- Versionamento básico persistido em `scripts.version`; cada salvamento cria uma nova versão.
-- Aprovação explícita pelo comando `approve-script`; apenas uma versão pode ficar aprovada.
-- Exportação bloqueada para rascunhos e disponível somente para a versão aprovada.
-- Exportação validada de `script_master.md`, `narration_darkplanner.txt` e `narration_clean.txt` pelo comando `export-script`.
-- Retomada validada: fechar e reabrir o processo preserva projeto, roteiro, versão e aprovação no SQLite.
-- Ingestão real de WAV com preservação do original, cópia de trabalho, duração e SHA-256.
-- Contrato de provider de transcrição e leitura de segmentos alinhados em JSON.
-- Segmentação com timestamps reais, validação de limites/overlaps e IDs previsíveis `SC001`.
-- Persistência de transcrição e versões de storyboard.
-- Testes automatizados do núcleo: **6 testes passando**, incluindo versionamento, aprovação, exportação e retomada.
-- Smoke test concluído pela CLI para criar projeto, salvar roteiro, abrir estado, aprovar e exportar.
-- Dashboard HTTP local funcional para criar projetos, salvar roteiros, aprovar versões e exportar o roteiro aprovado.
-- Fluxo HTTP do dashboard coberto por teste automatizado; **7 testes passando**.
+- Pacote externo `Cosmos_Oculto_GitHub_Continuacao.zip` integrado como nova base do repositório.
+- Pacote `coae`, CLI e entidades originais preservados e atualizados de forma aditiva.
+- Migração aditiva SQLite, integridade, versionamento e invalidação de dependências.
+- Interface local em sete áreas: visão geral, roteiro, áudio, storyboard, imagens, exportação e auditorias.
+- Roteiro editável, fontes fornecidas pelo usuário, auditoria e correção limitada opcional com Gemini.
+- Exportação para Dark Planner com pausas preservadas. Nenhuma geração de voz.
+- Ingestão real WAV/MP3/M4A, duração medida, originais preservados e vínculo ao roteiro.
+- Provider local faster-whisper com timestamps de palavras; importação assistida de JSON também disponível.
+- Propostas locais por frase/pausa; agrupamento semântico opcional por Gemini, com tempos definidos pelo código.
+- Edição, divisão/união e aprovação de storyboard; timeline visual contínua sem duração fixa.
+- Descrições visuais, geração Gemini, importação de imagens, auditoria multimodal e correção limitada.
+- Exportação de prompts, imagens, áudio, timeline JSON/CSV e legendas SRT/VTT para montagem manual.
+- Histórico de tarefas/auditorias, limites por chamada e retomada de resultados persistidos.
 
-## Em desenvolvimento
+## Validação realizada
 
-- Upload de áudio pela interface e visualização/edição do storyboard ainda não estão disponíveis no dashboard.
-- Provider local de transcrição usando FFmpeg e Whisper/faster-whisper.
-- Auditoria do storyboard e edição manual.
+FFmpeg 6.1.1/ffprobe foram instalados no ambiente Linux. O `.venv` do projeto foi criado com `faster-whisper 1.2.1` e `Pillow 12.3.0`.
 
-## Próximo passo
+34 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg e o fluxo assistido com imagens de teste. O pacote externo foi executado isoladamente antes da integração e passou pela mesma suíte.
 
-1. Adicionar ao dashboard a importação de áudio e a visualização do storyboard persistido.
-2. Instalar/configurar FFmpeg e um provider real de transcrição.
-3. Executar o fluxo audio-first com áudio real e validar a retomada da transcrição/storyboard.
-4. Somente após isso avançar para aprovação de storyboard e prompts visuais.
+O provider `FasterWhisperProvider` foi executado com o modelo `tiny` em áudio falado sintético em português: carregou o modelo e produziu 9 segmentos com timestamps reais para um arquivo de 3,49 s. O texto reconhecido apresentou erros esperados da voz sintetizada; este teste valida a integração técnica, não a qualidade editorial da transcrição.
 
-## Problemas conhecidos
+O smoke test HTTP local confirmou startup do servidor, carregamento do HTML do dashboard, bloqueio de `/api/state` sem token (`401`) e leitura autenticada do estado (`configured=false`, `ffprobe=false`). A compilação Python passou e os diagnósticos do workspace não apontaram erros.
 
-- O ambiente atual não possui FFmpeg; MP3/M4A retornam `UNSUPPORTED_AUDIO` de forma explícita.
-- Nenhum engine de transcrição está instalado; sem provider configurado o sistema deve retornar `PROVIDER_NOT_CONFIGURED`.
-- O JSON alinhado usado nos testes é entrada de provider, não uma transcrição simulada da aplicação.
-- A edição atual é feita por importação de arquivo via CLI; não há frontend de edição ainda.
-- Não há servidor web, frontend, API paga ou integração automática com Dark Planner.
+O teste de MP3 real via FFmpeg foi reproduzido com sucesso. A importação e a análise de áudio real de usuário ainda não foram executadas; nenhum modelo Whisper foi baixado durante esta etapa.
 
-## Decisões tomadas
+Não foram executadas chamadas pagas de IA, download/execução real de modelo de fala, Windows ou revisão visual com navegador completo. Não confundir testes de contrato, fixtures e dados sintéticos com aprovação de qualidade audiovisual.
 
-- SQLite e biblioteca padrão do Python nesta primeira fatia, sem dependências obrigatórias externas.
-- Áudio importado é a fonte de verdade temporal.
-- Cenas usam intervalos fornecidos pela transcrição e não slots fixos.
-- O Dark Planner permanece no modo ASSISTED e recebe apenas texto narrável e tags de pausa.
-- Exportações só podem ser produzidas a partir da versão de roteiro marcada como aprovada.
-- A etapa atual parou no núcleo persistente de projeto/roteiro; imagens, animações, SEO, métricas, Shorts e comunidade ainda não foram implementados.
+## Próximas etapas concretas
 
-## Pendências externas
+1. Validar o faster-whisper com um áudio humano real de 2–3 minutos do usuário; o modelo `tiny` já está disponível no cache, e modelos maiores poderão ser baixados conforme a configuração.
+2. Ajustar reconhecimento e limites semânticos após comparar as cenas com a escuta.
+3. Validar instalação Windows e o fluxo de áudio no Windows.
+4. Validar um modelo de imagem da conta do usuário com um pequeno lote e avaliar custo/qualidade.
+5. Evoluir formatos editoriais configuráveis, ingestão dos documentos de regras, SEO e exportação/renderização de movimento, conforme prioridades.
 
-- Instalação local do FFmpeg.
-- Escolha e configuração de um provider real de transcrição.
+A especificação COAE_SPEC.md preservada descreve também funcionalidades futuras. Os estados e capacidades efetivamente disponíveis são os deste documento e do README.

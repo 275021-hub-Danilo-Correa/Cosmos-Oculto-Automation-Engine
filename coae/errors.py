@@ -10,7 +10,7 @@ class UnsupportedAudioError(CoaeError):
     code = "UNSUPPORTED_AUDIO"
 
 
-class InvalidTranscriptError(CoaeError):
+class InvalidTranscriptError(CoaeError, ValueError):
     code = "INVALID_TRANSCRIPT"
 
 

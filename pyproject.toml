@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "coae"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cosmos Oculto Automation Engine"
 requires-python = ">=3.12"
 
 [project.scripts]
 coae = "coae.cli:main"
+coae-studio = "coae.server:main"
 
 [tool.setuptools.packages.find]
 include = ["coae*"]
+[tool.setuptools.package-data]
+coae = ["web/*.html", "web/*.css", "web/*.js"]

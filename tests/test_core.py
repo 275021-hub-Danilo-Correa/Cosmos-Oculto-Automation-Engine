@@ -4,8 +4,6 @@ import json
 import tempfile
 import unittest
 import wave
-import threading
-from http.client import HTTPConnection
 from pathlib import Path
 
 from coae.audio import import_audio
@@ -15,8 +13,6 @@ from coae.script_service import approve_script, export_script, save_script
 from coae.segmentation import segment_scenes
 from coae.storage import Database
 from coae.transcription import JsonTranscriptProvider
-from coae.web import CoaeHandler
-from http.server import HTTPServer
 
 
 class CoreWorkflowTests(unittest.TestCase):
@@ -25,7 +21,7 @@ class CoreWorkflowTests(unittest.TestCase):
             root = Path(directory)
             database = Database(root / "coae.sqlite3")
             database.create_project("COAE-TEST", "Buracos negros")
-            version = save_script(database, "COAE-TEST", "Buracos negros", "Primeiro parágrafo.\n\nSegundo parágrafo.")
+            version = save_script(database, "COAE-TEST", "Buracos negros", 'Primeiro parágrafo. <break time="1.5s"/>\n\nSegundo parágrafo.')
             with self.assertRaises(Exception):
                 export_script(database, "COAE-TEST", None, None, root / "exports")
             approve_script(database, "COAE-TEST", version)
@@ -92,10 +88,13 @@ class CoreWorkflowTests(unittest.TestCase):
             self.assertAlmostEqual(scenes[1].duration, 4.7)
             database = Database(root / "coae.sqlite3")
             database.create_project("COAE-TEST", "Teste")
-            audio_id = database.execute(
-                "INSERT INTO audio_files (project_id, original_path, working_path, format, duration, sha256) VALUES (?, ?, ?, ?, ?, ?)",
-                ("COAE-TEST", "original.wav", "working.wav", "wav", 7.1, "hash"),
-            ).lastrowid
+            source = root / "audio.wav"
+            with wave.open(str(source), "wb") as audio:
+                audio.setnchannels(1)
+                audio.setsampwidth(2)
+                audio.setframerate(8000)
+                audio.writeframes(b"\0\0" * 56800)
+            audio_id = import_audio(database, "COAE-TEST", source, root / "project")
             transcribe_and_build_storyboard(database, "COAE-TEST", audio_id, root / "audio.wav", 7.1, JsonTranscriptProvider(transcript))
             self.assertEqual(database.connection.execute("SELECT COUNT(*) FROM transcriptions").fetchone()[0], 1)
             self.assertEqual(database.connection.execute("SELECT COUNT(*) FROM scenes").fetchone()[0], 2)
@@ -103,32 +102,6 @@ class CoreWorkflowTests(unittest.TestCase):
     def test_scene_bounds_are_rejected(self) -> None:
         with self.assertRaises(ValueError):
             segment_scenes([TranscriptSegment(0, 9, "fora")], 8)
-
-    def test_local_web_flow_persists_script_and_approval(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            database_path = root / "coae.sqlite3"
-            database = Database(database_path)
-            database.create_project("COAE-WEB", "Projeto Web")
-            database.close()
-            handler = type("TestCoaeHandler", (CoaeHandler,), {"database_path": database_path})
-            server = HTTPServer(("127.0.0.1", 0), handler)
-            thread = threading.Thread(target=server.serve_forever)
-            thread.start()
-            try:
-                connection = HTTPConnection("127.0.0.1", server.server_port)
-                body = "title=Roteiro+web&body=Texto+persistido".encode()
-                connection.request("POST", "/projects/COAE-WEB/scripts", body, {"Content-Type": "application/x-www-form-urlencoded", "Content-Length": str(len(body))})
-                self.assertEqual(connection.getresponse().status, 303)
-                connection.close()
-                reopened = Database(database_path)
-                script = reopened.connection.execute("SELECT title, body FROM scripts").fetchone()
-                self.assertEqual((script["title"], script["body"]), ("Roteiro web", "Texto persistido"))
-                reopened.close()
-            finally:
-                server.shutdown()
-                thread.join()
-                server.server_close()
 
 
 if __name__ == "__main__":
