@@ -9,6 +9,7 @@ from .pipeline import transcribe_and_build_storyboard
 from .script_service import approve_script, export_script, save_script
 from .storage import Database
 from .transcription import JsonTranscriptProvider
+from .web import serve
 
 
 def main() -> None:
@@ -40,6 +41,9 @@ def main() -> None:
     transcribe.add_argument("transcript_file", type=Path)
     transcribe.add_argument("--audio-duration", required=True, type=float)
     transcribe.add_argument("--audio-path", required=True, type=Path)
+    web = subparsers.add_parser("serve")
+    web.add_argument("--host", default="127.0.0.1")
+    web.add_argument("--port", default=8000, type=int)
     args = parser.parse_args()
     database = Database(args.database)
     try:
@@ -87,5 +91,13 @@ def main() -> None:
                 JsonTranscriptProvider(args.transcript_file),
             )
             print(f"storyboard scenes: {len(scenes)}")
+        elif args.command == "serve":
+            database.close()
+            serve(args.database, args.host, args.port)
+            return
     finally:
         database.close()
+
+
+if __name__ == "__main__":
+    main()

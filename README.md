@@ -16,6 +16,15 @@ python3 -m unittest discover -s tests -v
 python3 -m coae.cli --database data/coae.sqlite3 create-project "Buracos negros"
 ```
 
+Para operar projetos localmente pelo navegador, inicie o dashboard:
+
+```bash
+python3 -m coae.cli --database data/coae.sqlite3 serve --port 8000
+```
+
+Acesse `http://127.0.0.1:8000`. A interface permite criar projetos, salvar versões de roteiro,
+aprovar uma versão e exportar os três arquivos do roteiro aprovado.
+
 O comando de criação imprime o ID persistido do projeto e cria sua estrutura inicial de diretórios. Liste ou abra projetos já existentes com:
 
 ```bash
@@ -64,4 +73,4 @@ python3 -m coae.cli --database data/coae.sqlite3 transcribe \
 
 O SQLite persiste projetos, versões de roteiro, exports, áudios, transcrições e versões de storyboard. Fechar e reabrir o processo preserva o estado do projeto, rascunhos, aprovação e exports. A segmentação valida limites, duração positiva e overlaps; não existe regra de slots fixos de oito segundos.
 
-A transcrição automática ainda é um provider externo/local a configurar. Imagens, movimentos, timeline, legendas e frontend ficam deliberadamente fora desta primeira fatia.
+A transcrição automática ainda é um provider externo/local a configurar. Imagens, movimentos, timeline e legendas ficam deliberadamente fora desta primeira fatia.

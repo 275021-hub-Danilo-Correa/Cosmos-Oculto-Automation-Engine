@@ -17,16 +17,18 @@
 - Persistência de transcrição e versões de storyboard.
 - Testes automatizados do núcleo: **6 testes passando**, incluindo versionamento, aprovação, exportação e retomada.
 - Smoke test concluído pela CLI para criar projeto, salvar roteiro, abrir estado, aprovar e exportar.
+- Dashboard HTTP local funcional para criar projetos, salvar roteiros, aprovar versões e exportar o roteiro aprovado.
+- Fluxo HTTP do dashboard coberto por teste automatizado; **7 testes passando**.
 
 ## Em desenvolvimento
 
-- Interface local de edição de roteiro e dashboard visual; atualmente a edição é feita pela CLI.
+- Upload de áudio pela interface e visualização/edição do storyboard ainda não estão disponíveis no dashboard.
 - Provider local de transcrição usando FFmpeg e Whisper/faster-whisper.
 - Auditoria do storyboard e edição manual.
 
 ## Próximo passo
 
-1. Adicionar interface local para abrir projetos, editar/importar rascunhos e aprovar versões.
+1. Adicionar ao dashboard a importação de áudio e a visualização do storyboard persistido.
 2. Instalar/configurar FFmpeg e um provider real de transcrição.
 3. Executar o fluxo audio-first com áudio real e validar a retomada da transcrição/storyboard.
 4. Somente após isso avançar para aprovação de storyboard e prompts visuais.

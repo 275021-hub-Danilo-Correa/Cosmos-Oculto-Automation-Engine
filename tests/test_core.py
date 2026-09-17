@@ -4,6 +4,8 @@ import json
 import tempfile
 import unittest
 import wave
+import threading
+from http.client import HTTPConnection
 from pathlib import Path
 
 from coae.audio import import_audio
@@ -13,6 +15,8 @@ from coae.script_service import approve_script, export_script, save_script
 from coae.segmentation import segment_scenes
 from coae.storage import Database
 from coae.transcription import JsonTranscriptProvider
+from coae.web import CoaeHandler
+from http.server import HTTPServer
 
 
 class CoreWorkflowTests(unittest.TestCase):
@@ -99,6 +103,32 @@ class CoreWorkflowTests(unittest.TestCase):
     def test_scene_bounds_are_rejected(self) -> None:
         with self.assertRaises(ValueError):
             segment_scenes([TranscriptSegment(0, 9, "fora")], 8)
+
+    def test_local_web_flow_persists_script_and_approval(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            database_path = root / "coae.sqlite3"
+            database = Database(database_path)
+            database.create_project("COAE-WEB", "Projeto Web")
+            database.close()
+            handler = type("TestCoaeHandler", (CoaeHandler,), {"database_path": database_path})
+            server = HTTPServer(("127.0.0.1", 0), handler)
+            thread = threading.Thread(target=server.serve_forever)
+            thread.start()
+            try:
+                connection = HTTPConnection("127.0.0.1", server.server_port)
+                body = "title=Roteiro+web&body=Texto+persistido".encode()
+                connection.request("POST", "/projects/COAE-WEB/scripts", body, {"Content-Type": "application/x-www-form-urlencoded", "Content-Length": str(len(body))})
+                self.assertEqual(connection.getresponse().status, 303)
+                connection.close()
+                reopened = Database(database_path)
+                script = reopened.connection.execute("SELECT title, body FROM scripts").fetchone()
+                self.assertEqual((script["title"], script["body"]), ("Roteiro web", "Texto persistido"))
+                reopened.close()
+            finally:
+                server.shutdown()
+                thread.join()
+                server.server_close()
 
 
 if __name__ == "__main__":
