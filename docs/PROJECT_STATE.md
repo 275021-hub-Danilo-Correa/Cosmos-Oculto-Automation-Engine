@@ -20,6 +20,8 @@
 - Rotas `analyze` e `import_transcript` rejeitam Gemini inválido antes de criar job ou consumir upload.
 - Análise local continua funcionando sem Gemini.
 - Erros remotos Gemini agora distinguem cota `429`, credencial/permissão `401/403` e requisição inválida `400`.
+- Completar descrições do storyboard corrigido: `gemini-2.5-flash` retornava `404`; escritor e auditor agora usam `gemini-3.1-flash-lite-preview`, validado com resposta JSON.
+- Indisponibilidade temporária `503` agora recebe mensagem específica, sem retry automático.
 - Histórico do storyboard agora permite restaurar uma versão anterior em nova versão, sem reaproveitar aprovação/imagens.
 - Storyboard agora permite desmembrar localmente por frases e pausas usando a transcrição salva, sem nova transcrição ou chamada Gemini.
 - Alterações de storyboard validam versão em tela, áudio/transcrição compatíveis e tarefas concorrentes antes de criar revisão.
@@ -28,7 +30,7 @@
 
 FFmpeg 6.1.1/ffprobe foram instalados no ambiente Linux. O `.venv` do projeto foi criado com `faster-whisper 1.2.1` e `Pillow 12.3.0`.
 
-52 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg, o fluxo assistido com imagens de teste, a validação do snapshot SQLite no bundle, as regressões do preflight Gemini e o histórico/restauração/divisão do storyboard.
+54 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg, o fluxo assistido com imagens de teste, a validação do snapshot SQLite no bundle, as regressões do preflight Gemini, os diagnósticos de modelos 404/503 e o histórico/restauração/divisão do storyboard.
 
 O provider `FasterWhisperProvider` foi executado com o modelo `tiny` em áudio falado sintético em português: carregou o modelo e produziu 9 segmentos com timestamps reais para um arquivo de 3,49 s. O texto reconhecido apresentou erros esperados da voz sintetizada; este teste valida a integração técnica, não a qualidade editorial da transcrição.
 
@@ -43,6 +45,8 @@ O projeto `COAE-BA0592A3` continua preservado no banco local. A atualização n�
 O preflight Gemini foi validado sem chamadas pagas: configuração ausente ou em branco, orçamento inválido/zerado/esgotado e SDK ausente preservam o banco e não iniciam transcrição. A rota HTTP também preserva o upload quando a validação falha.
 
 Uma tentativa real de geração de imagem respondeu `429 RESOURCE_EXHAUSTED`: a cota gratuita da conta está em zero para o modelo de imagem. O sistema agora informa explicitamente cota excedida e não repete automaticamente a chamada.
+
+As tentativas de completar descrições registraram `404` porque `gemini-2.5-flash` deixou de estar disponível para novos usuários. O modelo de texto alternativo foi testado com sucesso; a geração de imagens continua sujeita à cota específica do modelo de imagem.
 
 Não foram executadas chamadas pagas de IA, download/execução real de modelo de fala, Windows ou revisão visual com navegador completo. Não confundir testes de contrato, fixtures e dados sintéticos com aprovação de qualidade audiovisual.
 

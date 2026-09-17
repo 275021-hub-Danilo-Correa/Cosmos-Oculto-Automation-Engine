@@ -350,6 +350,10 @@ class Application:
                     message='Gemini recusou a credencial ou a permissão deste modelo. Verifique GEMINI_API_KEY, projeto e faturamento.'
                 elif code==400:
                     message='Gemini rejeitou a requisição. Verifique o modelo, formato da resposta e configuração da geração de imagem.'
+                elif code==404:
+                    message='Modelo Gemini não encontrado ou indisponível para esta conta. Atualize COAE_WRITER_MODEL/COAE_AUDITOR_MODEL/COAE_IMAGE_MODEL no .env.'
+                elif code==503:
+                    message='Modelo Gemini temporariamente indisponível por alta demanda. Aguarde e tente novamente; a tentativa foi contabilizada e não será repetida automaticamente.'
                 else:
                     message='Chamada Gemini não concluída. Confira modelo, quota e conexão; a tentativa foi contabilizada e não será repetida automaticamente.'
                 self.db.execute("UPDATE api_calls SET status='UNKNOWN_REMOTE_RESULT',metadata=? WHERE id=?",(dump({'error_type':type(exc).__name__,'error_code':code}),callid))

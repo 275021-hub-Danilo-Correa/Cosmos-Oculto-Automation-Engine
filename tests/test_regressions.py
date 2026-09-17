@@ -233,6 +233,22 @@ class ApplicationTests(unittest.TestCase):
             row=self.db.one('SELECT status,metadata FROM api_calls ORDER BY id DESC LIMIT 1')
             self.assertEqual(row['status'],'UNKNOWN_REMOTE_RESULT')
             self.assertIn('429',row['metadata'])
+
+    def test_missing_model_error_is_reported(self):
+        class MissingModelError(Exception):
+            code=404
+        with patch('coae.provider.Gemini') as provider,patch.dict(os.environ,{'COAE_MAX_CALLS_PER_PROJECT':'1'}):
+            provider.return_value.generate_image.side_effect=MissingModelError()
+            with self.assertRaisesRegex(ValueError,'Modelo Gemini não encontrado'):
+                self.app.remote(self.pid,'image','image',{'prompt':'teste'})
+
+    def test_temporary_model_error_is_reported(self):
+        class TemporaryModelError(Exception):
+            code=503
+        with patch('coae.provider.Gemini') as provider,patch.dict(os.environ,{'COAE_MAX_CALLS_PER_PROJECT':'1'}):
+            provider.return_value.call.side_effect=TemporaryModelError()
+            with self.assertRaisesRegex(ValueError,'temporariamente indisponível'):
+                self.app.remote(self.pid,'writer','teste',{})
     def test_no_image_before_storyboard_approval(self):
         self.app.analyze(self.pid,transcript_path=self.trans)
         with self.assertRaises(ValueError):self.app.import_image(self.pid,'SC001',self.root/'missing.png')
