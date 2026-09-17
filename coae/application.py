@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import sqlite3
+import tempfile
 import threading
 import uuid
 import zipfile
@@ -390,8 +391,18 @@ class Application:
         return data
     def bundle(self,pid):
         root=self.folder(pid);out=io.BytesIO()
-        with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
-            for p in root.rglob('*'):
-                if p.is_file():z.write(p,str(Path(pid)/p.relative_to(root)))
-            z.writestr(f'{pid}/project_state.json',dump(self.state(pid)))
+        with tempfile.TemporaryDirectory(prefix='coae-bundle-') as temp:
+            snapshot=Path(temp)/'coae.sqlite3'
+            connection=sqlite3.connect(snapshot)
+            try:
+                with self.db.lock:
+                    self.db.connection.backup(connection)
+            finally:
+                connection.close()
+            with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
+                for p in root.rglob('*'):
+                    if p.is_file():z.write(p,str(Path(pid)/p.relative_to(root)))
+                z.write(snapshot,f'{pid}/data/coae.sqlite3')
+                z.writestr(f'{pid}/project_state.json',dump(self.state(pid)))
+                z.writestr(f'{pid}/BACKUP_README.txt','Este bundle inclui os artefatos do projeto e um snapshot consistente de data/coae.sqlite3. Preserve a pasta data/ ao retomar o projeto; os caminhos registrados no banco podem exigir rebase se o projeto for movido para outra pasta.\n')
         return out.getvalue()

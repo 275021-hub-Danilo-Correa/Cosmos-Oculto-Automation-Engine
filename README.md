@@ -61,7 +61,7 @@ Feche o programa e faça cópia de segurança da pasta inteira, principalmente `
 
 O estúdio utiliza `data/coae.sqlite3` e `projects/` ao lado de `iniciar.py`, como o CLI original. A migração é aditiva: preserva registros e acrescenta colunas/tabelas. Caminhos relativos de áudio são resolvidos nessa pasta. Storyboards antigos sem vínculo comprovável ao áudio são mantidos como desatualizados e precisam de nova análise. Se arquivos estavam fora da pasta do projeto, reimporte-os.
 
-O ZIP de download de um projeto contém mídia, exports e um retrato JSON do estado, **não um backup restaurável do banco inteiro**. Para backup completo, feche o estúdio e copie `data/` e `projects/` juntos.
+O ZIP de download de um projeto contém mídia, exports, um retrato JSON do estado e um snapshot consistente de `data/coae.sqlite3`. Preserve o arquivo `data/coae.sqlite3` ao retomar o projeto; se mover a pasta para outro caminho, confira os caminhos registrados no banco. Para backup integral de vários projetos, feche o estúdio e copie `data/` e `projects/` juntos.
 
 ## Linux / macOS e comandos
 

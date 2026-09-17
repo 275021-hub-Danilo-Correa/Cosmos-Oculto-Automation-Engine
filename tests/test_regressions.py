@@ -1,4 +1,5 @@
 import json
+import io
 import math
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ import sys
 import tempfile
 import unittest
 import wave
+import zipfile
 from unittest.mock import patch
 from coae.application import Application
 from coae.audio import import_audio,file_sha256,verified_audio
@@ -131,6 +133,17 @@ class ApplicationTests(unittest.TestCase):
         self.db.close();self.app=Application(self.root);self.db=self.app.db
         self.assertTrue(self.app.state(self.pid)['audios'][0]['relative_path'])
         self.assertEqual(self.app.audio(self.pid)['id'],row['id'])
+    def test_project_bundle_contains_database_snapshot(self):
+        bundle=self.app.bundle(self.pid)
+        with zipfile.ZipFile(io.BytesIO(bundle)) as archive:
+            names=archive.namelist()
+            self.assertIn(f'{self.pid}/data/coae.sqlite3',names)
+            self.assertIn(f'{self.pid}/BACKUP_README.txt',names)
+            snapshot_path=self.root/'bundle.sqlite3'
+            snapshot_path.write_bytes(archive.read(f'{self.pid}/data/coae.sqlite3'))
+            snapshot=sqlite3.connect(snapshot_path)
+            self.assertEqual(snapshot.execute('SELECT COUNT(*) FROM projects').fetchone()[0],1)
+            snapshot.close()
     def test_invalid_ai_output_never_approves(self):
         self.app.remote=lambda *a,**k:{'approved':True}
         with self.assertRaises(ValueError):self.app.audit_script(self.pid,remote=True)

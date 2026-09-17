@@ -6,6 +6,7 @@ __pycache__/
 *.sqlite3-shm
 *.sqlite3-wal
 projects/*/audio/originals/
+backups/
 workspace/
 .venv/
 *.egg-info/

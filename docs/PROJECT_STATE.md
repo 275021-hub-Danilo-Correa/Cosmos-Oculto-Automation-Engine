@@ -15,18 +15,21 @@
 - Descrições visuais, geração Gemini, importação de imagens, auditoria multimodal e correção limitada.
 - Exportação de prompts, imagens, áudio, timeline JSON/CSV e legendas SRT/VTT para montagem manual.
 - Histórico de tarefas/auditorias, limites por chamada e retomada de resultados persistidos.
+- Bundle de projeto inclui snapshot consistente de `data/coae.sqlite3`, `BACKUP_README.txt`, artefatos e `project_state.json`.
 
 ## Validação realizada
 
 FFmpeg 6.1.1/ffprobe foram instalados no ambiente Linux. O `.venv` do projeto foi criado com `faster-whisper 1.2.1` e `Pillow 12.3.0`.
 
-34 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg e o fluxo assistido com imagens de teste. O pacote externo foi executado isoladamente antes da integração e passou pela mesma suíte.
+35 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg, o fluxo assistido com imagens de teste e a validação do snapshot SQLite no bundle. O pacote externo foi executado isoladamente antes da integração e passou pela mesma suíte anterior.
 
 O provider `FasterWhisperProvider` foi executado com o modelo `tiny` em áudio falado sintético em português: carregou o modelo e produziu 9 segmentos com timestamps reais para um arquivo de 3,49 s. O texto reconhecido apresentou erros esperados da voz sintetizada; este teste valida a integração técnica, não a qualidade editorial da transcrição.
 
 O smoke test HTTP local confirmou startup do servidor, carregamento do HTML do dashboard, bloqueio de `/api/state` sem token (`401`) e leitura autenticada do estado (`configured=false`, `ffprobe=false`). A compilação Python passou e os diagnósticos do workspace não apontaram erros.
 
 O teste de MP3 real via FFmpeg foi reproduzido com sucesso. A importação e a análise de áudio real de usuário ainda não foram executadas; nenhum modelo Whisper foi baixado durante esta etapa.
+
+O teste de bundle confirmou que o snapshot SQLite é legível e contém o projeto persistido. O bundle é uma cópia para análise/continuidade; ao mover o projeto para outra pasta, caminhos absolutos registrados no SQLite podem exigir rebase ou reimportação dos arquivos.
 
 Não foram executadas chamadas pagas de IA, download/execução real de modelo de fala, Windows ou revisão visual com navegador completo. Não confundir testes de contrato, fixtures e dados sintéticos com aprovação de qualidade audiovisual.
 
