@@ -1,0 +1,22 @@
+[
+  {
+    "scene_id": "SC001",
+    "start_time": 0,
+    "end_time": 51.591837,
+    "transcript_reference": "Ao observar o céu noturno, encontramos estrelas em diferentes fases de sua existência. Uma estrela pode nascer quando uma região de uma nuvem de gás e poeira começa a se contrair pela ação da gravidade. Durante esse processo, a região central se torna mais densa e quente. Quando as condições permitem a fusão do hidrogênio, inicia -se uma nova etapa da vida estelar. Muito tempo depois, o destino dessa estrela dependerá principalmente de sua massa. Algumas terminarão como anãs brancas. Outras poderão deixar estrelas de nêutrons ou buracos negros. Mas como os astrônomos descobrem essa história apenas estudando a luz?",
+    "semantic_summary": "Nascimento de uma estrela a partir do colapso de uma nuvem de gás.",
+    "visual_description": "Nuvem molecular escura no espaço profundo, região central condensada e brilhante, escala cósmica, composição ampla e visualização científica realista, sem texto.",
+    "visual_function": "ESTABLISH",
+    "camera_direction": "STATIC",
+    "movement": "STATIC",
+    "transition": "NONE",
+    "continuity_reference": null,
+    "generation_status": "PENDING",
+    "audit_status": "PENDING",
+    "first_segment": 0,
+    "last_segment": 99,
+    "speech_start": 0,
+    "speech_end": 50.97,
+    "duration": 51.591837
+  }
+]

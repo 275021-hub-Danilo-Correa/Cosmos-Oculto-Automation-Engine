@@ -144,6 +144,68 @@ class ApplicationTests(unittest.TestCase):
             snapshot=sqlite3.connect(snapshot_path)
             self.assertEqual(snapshot.execute('SELECT COUNT(*) FROM projects').fetchone()[0],1)
             snapshot.close()
+    def assert_preflight_preserves_project(self,environment,client_error=None):
+        self.prepared()
+        before='\n'.join(self.db.connection.iterdump())
+        with patch.dict(os.environ,environment,clear=True), patch('coae.provider.Gemini') as client, patch('coae.application.transcribe_and_build_storyboard') as transcribe:
+            if client_error:client.side_effect=client_error
+            with self.assertRaises(ValueError):self.app.analyze(self.pid,semantic=True)
+            transcribe.assert_not_called()
+            client.return_value.call.assert_not_called()
+        self.assertEqual(before,'\n'.join(self.db.connection.iterdump()))
+
+    def test_missing_gemini_config_preserves_approved_storyboard(self):
+        self.assert_preflight_preserves_project({})
+
+    def test_blank_gemini_key_preserves_approved_storyboard(self):
+        self.assert_preflight_preserves_project({'GEMINI_API_KEY':'   ','COAE_WRITER_MODEL':'writer','COAE_AUDITOR_MODEL':'auditor','COAE_MAX_CALLS_PER_PROJECT':'10'})
+
+    def test_invalid_or_zero_budget_prevents_transcription(self):
+        for budget in ('invalid','0','-1'):
+            with self.subTest(budget=budget):
+                self.assert_preflight_preserves_project({'GEMINI_API_KEY':'test','COAE_WRITER_MODEL':'writer','COAE_AUDITOR_MODEL':'auditor','COAE_MAX_CALLS_PER_PROJECT':budget})
+
+    def test_exhausted_budget_prevents_transcription(self):
+        self.db.execute("INSERT INTO api_calls(project_id,role,status) VALUES(?,'writer','DONE')",(self.pid,))
+        self.assert_preflight_preserves_project({'GEMINI_API_KEY':'test','COAE_WRITER_MODEL':'writer','COAE_AUDITOR_MODEL':'auditor','COAE_MAX_CALLS_PER_PROJECT':'1'})
+
+    def test_missing_sdk_prevents_transcription(self):
+        self.assert_preflight_preserves_project({'GEMINI_API_KEY':'test','COAE_WRITER_MODEL':'writer','COAE_AUDITOR_MODEL':'auditor','COAE_MAX_CALLS_PER_PROJECT':'10'},ValueError('Instale requirements-api.txt'))
+
+    def test_valid_preflight_runs_no_remote_request(self):
+        with patch.dict(os.environ,{'GEMINI_API_KEY':'test','COAE_WRITER_MODEL':'writer','COAE_AUDITOR_MODEL':'auditor','COAE_MAX_CALLS_PER_PROJECT':'10'},clear=True),patch('coae.provider.Gemini') as client:
+            self.app.preflight_analysis(self.pid,True)
+            client.assert_called_once();client.return_value.close.assert_called_once()
+            client.return_value.call.assert_not_called()
+        self.assertEqual(self.db.one('SELECT COUNT(*) FROM api_calls')[0],0)
+
+    def test_local_analysis_does_not_require_gemini(self):
+        with patch.dict(os.environ,{},clear=True),patch('coae.provider.Gemini') as client:
+            self.app.analyze(self.pid,False,self.trans)
+            client.assert_not_called()
+        self.assertTrue(self.app.story(self.pid)[1])
+
+    def test_http_preflight_rejects_before_job_or_upload_consumption(self):
+        import threading
+        import urllib.request
+        import urllib.error
+        from coae.server import Server
+        self.prepared()
+        server=Server(('127.0.0.1',0),self.app)
+        server.uploads['fixture']=self.trans
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        before='\n'.join(self.db.connection.iterdump())
+        try:
+            with patch.dict(os.environ,{},clear=True):
+                for action in ('analyze','import_transcript'):
+                    request=urllib.request.Request(f'http://127.0.0.1:{server.server_port}/api/action',data=json.dumps({'action':action,'project':self.pid,'semantic':True,'upload':'fixture'}).encode(),headers={'Content-Type':'application/json','X-COAE-Token':server.token})
+                    with self.assertRaises(urllib.error.HTTPError) as caught:urllib.request.urlopen(request)
+                    self.assertEqual(caught.exception.code,400)
+                    self.assertIn('GEMINI_API_KEY',caught.exception.read().decode())
+            self.assertEqual(before,'\n'.join(self.db.connection.iterdump()))
+            self.assertIn('fixture',server.uploads)
+        finally:
+            server.shutdown();thread.join();server.server_close();server.temp.cleanup()
     def test_invalid_ai_output_never_approves(self):
         self.app.remote=lambda *a,**k:{'approved':True}
         with self.assertRaises(ValueError):self.app.audit_script(self.pid,remote=True)
@@ -158,6 +220,19 @@ class ApplicationTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.app.remote(self.pid,'writer','test',{})
             self.assertEqual(provider.return_value.call.call_count,1)
             self.assertEqual(self.db.one('SELECT status FROM api_calls')[0],'UNKNOWN_REMOTE_RESULT')
+
+    def test_quota_error_is_reported_without_retry(self):
+        class QuotaError(Exception):
+            code=429
+        with patch('coae.provider.Gemini') as provider,patch.dict(os.environ,{'COAE_MAX_CALLS_PER_PROJECT':'1'}):
+            provider.return_value.generate_image.side_effect=QuotaError()
+            with self.assertRaisesRegex(ValueError,'Cota Gemini excedida'):
+                self.app.remote(self.pid,'image','image',{'prompt':'teste'})
+            with self.assertRaises(ValueError):
+                self.app.remote(self.pid,'image','image',{'prompt':'teste'})
+            row=self.db.one('SELECT status,metadata FROM api_calls ORDER BY id DESC LIMIT 1')
+            self.assertEqual(row['status'],'UNKNOWN_REMOTE_RESULT')
+            self.assertIn('429',row['metadata'])
     def test_no_image_before_storyboard_approval(self):
         self.app.analyze(self.pid,transcript_path=self.trans)
         with self.assertRaises(ValueError):self.app.import_image(self.pid,'SC001',self.root/'missing.png')

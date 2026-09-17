@@ -1,0 +1,35 @@
+{
+  "decision": "BLOCKED",
+  "issues": [
+    {
+      "code": "VISUAL",
+      "message": "SC001: falta a ideia ou a descrição da imagem.",
+      "severity": "error"
+    },
+    {
+      "code": "LONG",
+      "message": "SC001: cena longa; confira se contém mais de uma ideia.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL",
+      "message": "SC002: falta a ideia ou a descrição da imagem.",
+      "severity": "error"
+    },
+    {
+      "code": "VISUAL",
+      "message": "SC003: falta a ideia ou a descrição da imagem.",
+      "severity": "error"
+    },
+    {
+      "code": "VISUAL",
+      "message": "SC004: falta a ideia ou a descrição da imagem.",
+      "severity": "error"
+    },
+    {
+      "code": "TIMING_REVIEW",
+      "message": "Ouça os cortes, confira reconhecimento de fala, correspondência visual e rigor científico.",
+      "severity": "review"
+    }
+  ]
+}

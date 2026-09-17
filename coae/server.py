@@ -73,6 +73,8 @@ class Handler(BaseHTTPRequestHandler):
             d=json.loads(self.rfile.read(size));action=d.get('action');pid=d.get('project');app=self.server.app
             with self.server.command_lock:
                 if pid and app.db.one("SELECT id FROM jobs WHERE project_id=? AND status='RUNNING'",(pid,)):raise ValueError('Aguarde a tarefa em execução antes de alterar este projeto.')
+                if action in ('analyze','import_transcript'):
+                    app.preflight_analysis(pid,d.get('semantic',False))
                 if action=='create':result=app.create(d['title'])
                 elif action=='save_script':result={'version':save_script(app.db,pid,d['title'],d['body'])}
                 elif action=='sources':result=app.save_sources(pid,d['text'])

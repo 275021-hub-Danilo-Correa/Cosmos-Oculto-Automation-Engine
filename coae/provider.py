@@ -11,9 +11,9 @@ class Gemini:
             from google.genai import types
         except ImportError:
             raise ValueError('Instale requirements-api.txt para habilitar Gemini.') from None
-        key = os.getenv('GEMINI_API_KEY')
-        self.writer = os.getenv('COAE_WRITER_MODEL', '')
-        self.auditor = os.getenv('COAE_AUDITOR_MODEL', '')
+        key = os.getenv('GEMINI_API_KEY', '').strip()
+        self.writer = os.getenv('COAE_WRITER_MODEL', '').strip()
+        self.auditor = os.getenv('COAE_AUDITOR_MODEL', '').strip()
         if not key or not self.writer or not self.auditor:
             raise ValueError('Configure GEMINI_API_KEY, COAE_WRITER_MODEL e COAE_AUDITOR_MODEL no .env.')
         self.types = types

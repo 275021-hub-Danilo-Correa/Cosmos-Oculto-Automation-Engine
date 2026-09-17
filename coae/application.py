@@ -156,8 +156,31 @@ class Application:
         self.note(note)
         self.db.execute("UPDATE audio_files SET status='APPROVED' WHERE id=?",(audio_id,));self.db.event(pid,'AUDIO_APPROVED',{'audio_id':audio_id,'note':note})
         return {'message':'Áudio aprovado. Use Analisar áudio e criar cenas.'}
-    def analyze(self,pid,semantic=False,transcript_path=None):
+    def preflight_gemini(self,pid):
+        self.db.get_project(pid)
+        required=('GEMINI_API_KEY','COAE_WRITER_MODEL','COAE_AUDITOR_MODEL')
+        missing=[name for name in required if not os.getenv(name,'').strip()]
+        if missing:
+            raise ValueError('Antes de usar Gemini, configure '+', '.join(missing)+' no .env e reinicie o programa. Você também pode desmarcar Gemini para análise local.')
+        try:
+            limit=int(os.getenv('COAE_MAX_CALLS_PER_PROJECT','0'))
+        except ValueError:
+            raise ValueError('COAE_MAX_CALLS_PER_PROJECT deve ser um número inteiro positivo.') from None
+        used=self.db.one('SELECT COUNT(*) FROM api_calls WHERE project_id=?',(pid,))[0]
+        if limit<=0 or used>=limit:
+            raise ValueError('Gemini sem chamadas disponíveis: confira COAE_MAX_CALLS_PER_PROJECT no .env e reinicie. O teto é por projeto, não monetário.')
+        from .provider import Gemini
+        client=Gemini()
+        client.close()
+
+    def preflight_analysis(self,pid,semantic=False):
         row=self.audio(pid)
+        if row['status']!='APPROVED':raise ValueError('Ouça e aprove o áudio primeiro.')
+        if semantic:self.preflight_gemini(pid)
+        return row
+
+    def analyze(self,pid,semantic=False,transcript_path=None):
+        row=self.preflight_analysis(pid,semantic)
         if row['status']!='APPROVED':raise ValueError('Ouça e aprove o áudio primeiro.')
         transcribe_and_build_storyboard(self.db,pid,row['id'],provider=JsonTranscriptProvider(transcript_path) if transcript_path else None)
         story,scenes=self.story(pid)
@@ -265,8 +288,17 @@ class Application:
             try:
                 result,usage=client.generate_image(data) if role=='image' else client.call(task,data,audit=role=='auditor',image=image)
             except Exception as exc:
-                self.db.execute("UPDATE api_calls SET status='UNKNOWN_REMOTE_RESULT',metadata=? WHERE id=?",(dump({'error_type':type(exc).__name__}),callid))
-                raise ValueError('Chamada não concluída localmente. Confira modelo/quota/conexão. A tentativa foi contabilizada e não será reenviada automaticamente.') from None
+                code=getattr(exc,'code',None)
+                if code==429:
+                    message='Cota Gemini excedida para este modelo. Verifique faturamento/plano e limites da API; a tentativa foi contabilizada e não será repetida automaticamente.'
+                elif code in (401,403):
+                    message='Gemini recusou a credencial ou a permissão deste modelo. Verifique GEMINI_API_KEY, projeto e faturamento.'
+                elif code==400:
+                    message='Gemini rejeitou a requisição. Verifique o modelo, formato da resposta e configuração da geração de imagem.'
+                else:
+                    message='Chamada Gemini não concluída. Confira modelo, quota e conexão; a tentativa foi contabilizada e não será repetida automaticamente.'
+                self.db.execute("UPDATE api_calls SET status='UNKNOWN_REMOTE_RESULT',metadata=? WHERE id=?",(dump({'error_type':type(exc).__name__,'error_code':code}),callid))
+                raise ValueError(message) from None
             self.db.execute("UPDATE api_calls SET status='DONE',metadata=? WHERE id=?",(dump(usage),callid));return result
         finally:client.close()
     @staticmethod
