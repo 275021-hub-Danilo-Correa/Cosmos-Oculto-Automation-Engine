@@ -99,6 +99,8 @@ class Handler(BaseHTTPRequestHandler):
                 elif action=='semantic':result=app.job(pid,action,lambda:app.semantic_storyboard(pid))
                 elif action=='describe':result=app.job(pid,action,lambda:app.describe_scenes(pid))
                 elif action=='save_story':result=app.save_story(pid,d['version'],d['scenes'])
+                elif action=='restore_story':result=app.restore_story(pid,d['version'],d['source_version'])
+                elif action=='split_story':result=app.split_story_by_speech(pid,d['version'])
                 elif action=='split':result=app.split_scene(pid,d['version'],d['scene_id'])
                 elif action=='merge':result=app.merge_scene(pid,d['version'],d['scene_id'])
                 elif action=='audit_story':result=app.audit_story(pid)

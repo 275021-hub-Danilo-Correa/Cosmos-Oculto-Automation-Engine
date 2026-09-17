@@ -14,6 +14,12 @@ Esta versão continua o pacote `coae` do ZIP original. Não gera voz, não exige
 
 O programa não é um `.exe` independente. Os `.bat` iniciam o código Python. O instalador Windows foi inspecionado, mas não executado em Windows neste ambiente Linux.
 
+### Restaurar ou desmembrar o storyboard
+
+Na aba **Storyboard**, a área **Restaurar uma versão anterior** mostra o histórico e a quantidade de cenas de cada versão. Selecione uma versão anterior e confirme para criar uma nova versão, preservando o histórico e exigindo nova aprovação.
+
+O botão **Desmembrar por frases e pausas** recalcula as divisões localmente usando a transcrição já salva. Não chama Gemini, não transcreve novamente e reinicia as descrições visuais porque os trechos podem mudar.
+
 ## Seu fluxo de produção
 
 1. **Roteiro:** crie um projeto, cole fontes e referências, escreva/importe o texto ou use Gemini. Audite, revise e aprove. A exportação preserva as pausas `<break time="1s"/>` existentes, sem inventar outras.

@@ -20,12 +20,15 @@
 - Rotas `analyze` e `import_transcript` rejeitam Gemini inválido antes de criar job ou consumir upload.
 - Análise local continua funcionando sem Gemini.
 - Erros remotos Gemini agora distinguem cota `429`, credencial/permissão `401/403` e requisição inválida `400`.
+- Histórico do storyboard agora permite restaurar uma versão anterior em nova versão, sem reaproveitar aprovação/imagens.
+- Storyboard agora permite desmembrar localmente por frases e pausas usando a transcrição salva, sem nova transcrição ou chamada Gemini.
+- Alterações de storyboard validam versão em tela, áudio/transcrição compatíveis e tarefas concorrentes antes de criar revisão.
 
 ## Validação realizada
 
 FFmpeg 6.1.1/ffprobe foram instalados no ambiente Linux. O `.venv` do projeto foi criado com `faster-whisper 1.2.1` e `Pillow 12.3.0`.
 
-43 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg, o fluxo assistido com imagens de teste, a validação do snapshot SQLite no bundle e as regressões do preflight Gemini. O pacote externo foi executado isoladamente antes da integração e passou pela suíte anterior.
+52 testes Python passaram no workspace Linux **sem skips**, incluindo MP3 real via FFmpeg, o fluxo assistido com imagens de teste, a validação do snapshot SQLite no bundle, as regressões do preflight Gemini e o histórico/restauração/divisão do storyboard.
 
 O provider `FasterWhisperProvider` foi executado com o modelo `tiny` em áudio falado sintético em português: carregou o modelo e produziu 9 segmentos com timestamps reais para um arquivo de 3,49 s. O texto reconhecido apresentou erros esperados da voz sintetizada; este teste valida a integração técnica, não a qualidade editorial da transcrição.
 
@@ -34,6 +37,8 @@ O smoke test HTTP local confirmou startup do servidor, carregamento do HTML do d
 O teste de MP3 real via FFmpeg foi reproduzido com sucesso. A importação e a análise de áudio real de usuário ainda não foram executadas; nenhum modelo Whisper foi baixado durante esta etapa.
 
 O teste de bundle confirmou que o snapshot SQLite é legível e contém o projeto persistido. O bundle é uma cópia para análise/continuidade; ao mover o projeto para outra pasta, caminhos absolutos registrados no SQLite podem exigir rebase ou reimportação dos arquivos.
+
+O projeto `COAE-BA0592A3` continua preservado no banco local. A atualização não restaura nem desmembra automaticamente o storyboard real; a operação deve ser feita na aba Storyboard, com confirmação do usuário.
 
 O preflight Gemini foi validado sem chamadas pagas: configuração ausente ou em branco, orçamento inválido/zerado/esgotado e SDK ausente preservam o banco e não iniciam transcrição. A rota HTTP também preserva o upload quando a validação falha.
 

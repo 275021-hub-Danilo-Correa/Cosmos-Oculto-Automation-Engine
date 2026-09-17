@@ -11,7 +11,7 @@ import tempfile
 import threading
 import uuid
 import zipfile
-from dataclasses import asdict,fields
+from dataclasses import asdict,fields,replace
 from .errors import CoaeError
 from .audio import import_audio,verified_audio,file_sha256
 from .models import Scene,TranscriptSegment
@@ -247,6 +247,61 @@ class Application:
         self.note(note)
         self.db.execute("UPDATE storyboards SET status='APPROVED' WHERE id=?",(story['id'],));self.db.event(pid,'STORYBOARD_APPROVED',{'version':version,'note':note})
         return {'message':'Storyboard aprovado. Agora você pode gerar as imagens.'}
+    def _revision_context(self,pid,version):
+        current=self.db.one('SELECT * FROM storyboards WHERE project_id=? ORDER BY version DESC LIMIT 1',(pid,))
+        if type(version) is not int or not current or current['version']!=version:
+            raise ValueError('A versão mudou. Atualize a tela antes de continuar.')
+        if self.db.one("SELECT id FROM jobs WHERE project_id=? AND status='RUNNING'",(pid,)):
+            raise ValueError('Aguarde a tarefa em execução.')
+        audio=self.audio(pid)
+        if audio['status']!='APPROVED':raise ValueError('Aprove o áudio atual antes de alterar o storyboard.')
+        return current,audio
+
+    def _revision_transcript(self,pid,story,audio):
+        if story['audio_id']!=audio['id']:
+            raise ValueError('Esta versão pertence a outro áudio. Selecione uma versão do áudio atual.')
+        trans=self.db.one('SELECT * FROM transcriptions WHERE id=? AND project_id=? AND audio_id=?',
+                          (story['transcription_id'],pid,audio['id']))
+        if not trans or trans['source_hash']!=audio['sha256']:
+            raise ValueError('A versão não tem transcrição compatível com o áudio atual.')
+        return trans
+
+    def _commit_revision(self,pid,scenes,source,action,metadata):
+        scenes=[replace(scene,generation_status='PENDING',audit_status='PENDING') for scene in scenes]
+        version=save_storyboard(self.db,pid,scenes,source['audio_id'],source['transcription_id'])
+        report=self.audit_story(pid)
+        self.db.event(pid,action,dict(metadata,new_version=version,scenes=len(scenes)))
+        return {'version':version,'scene_count':len(scenes),'audit':report,
+                'message':f'Versão {version} criada com {len(scenes)} cenas. Revise as descrições e aprove novamente. Histórico preservado.'}
+
+    def restore_story(self,pid,version,source_version):
+        """Copy a historical version; never reactivate old approvals or images."""
+        with self.db.transaction():
+            current,audio=self._revision_context(pid,version)
+            if type(source_version) is not int or source_version>=version:
+                raise ValueError('Selecione uma versão anterior à atual.')
+            source=self.db.one('SELECT * FROM storyboards WHERE project_id=? AND version=?',(pid,source_version))
+            if not source:raise ValueError('Versão anterior inexistente neste projeto.')
+            self._revision_transcript(pid,source,audio)
+            scenes=[Scene(**json.loads(row['payload'])) for row in self.db.rows(
+                'SELECT payload FROM scenes WHERE project_id=? AND storyboard_version=? ORDER BY start_time,scene_id',(pid,source_version))]
+            if not scenes:raise ValueError('A versão escolhida não contém cenas.')
+            return self._commit_revision(pid,scenes,source,'STORYBOARD_RESTORED',{'source_version':source_version,'previous_version':version})
+
+    def split_story_by_speech(self,pid,version):
+        """Rebuild sentence/pause boundaries locally using stored timestamps."""
+        with self.db.transaction():
+            current,audio=self._revision_context(pid,version)
+            trans=self._revision_transcript(pid,current,audio)
+            segments=[TranscriptSegment(**row) for row in json.loads(trans['payload'])]
+            scenes=segment_scenes(segments,audio['duration'])
+            old=[Scene(**json.loads(row['payload'])) for row in self.db.rows(
+                'SELECT payload FROM scenes WHERE project_id=? AND storyboard_version=? ORDER BY start_time,scene_id',(pid,version))]
+            signature=lambda rows:[(r.start_time,r.end_time,r.first_segment,r.last_segment,r.transcript_reference) for r in rows]
+            if signature(old)==signature(scenes):
+                return {'version':version,'scene_count':len(old),'message':'As cenas já seguem as frases e pausas reconhecidas. Nenhuma versão criada.'}
+            return self._commit_revision(pid,scenes,current,'STORYBOARD_SPLIT_BY_SPEECH',{'previous_version':version})
+
     def split_scene(self,pid,version,scene_id):
         story,scenes=self.story(pid)
         if story['version']!=version:raise ValueError('A versão mudou.')
@@ -410,6 +465,8 @@ class Application:
             data[key]=[dict(r) for r in self.db.rows(f'SELECT * FROM {table} WHERE project_id=? ORDER BY {order} DESC',(pid,))]
         for key,field in [('audits','report'),('jobs','result'),('events','payload')]:
             for row in data[key]:row[field]=json.loads(row[field])
+        counts={r['storyboard_version']:r['n'] for r in self.db.rows('SELECT storyboard_version,COUNT(*) n FROM scenes WHERE project_id=? GROUP BY storyboard_version',(pid,))}
+        for row in data['stories']:row['scene_count']=counts.get(row['version'],0)
         data['scenes']=[]
         if data['stories']:
             data['scenes']=[json.loads(r['payload']) for r in self.db.rows('SELECT payload FROM scenes WHERE project_id=? AND storyboard_version=? ORDER BY start_time,scene_id',(pid,data['stories'][0]['version']))]
