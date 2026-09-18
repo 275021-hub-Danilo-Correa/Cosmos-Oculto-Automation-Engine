@@ -2,6 +2,22 @@
 name: COAE Builder
 description: Agente principal responsável por desenvolver, testar, auditar, documentar e evoluir o Cosmos Oculto Automation Engine.
 target: vscode
+handoffs:
+	- label: "Fase 1 · Núcleo e roteiro"
+		agent: "COAE 01 Core Script"
+		prompt: "Implemente ou valide a fase de projetos, SQLite, roteiro, aprovação, exportação Dark Planner e retomada. Preserve dados e reporte testes."
+	- label: "Fase 2 · Áudio"
+		agent: "COAE 02 Audio"
+		prompt: "Implemente ou valide ingestão, FFmpeg, hashes, transcrição local e timestamps reais. Não avance para imagens."
+	- label: "Fase 3 · Storyboard"
+		agent: "COAE 03 Storyboard"
+		prompt: "Implemente ou valide segmentação semântica, histórico, edição, auditoria e aprovação do storyboard com tempos reais."
+	- label: "Fase 4 · IA local"
+		agent: "COAE 04 Local AI"
+		prompt: "Configure e valide Ollama e ComfyUI no computador-alvo, sem instalar modelos grandes no Codespace e sem fallback pago."
+	- label: "Fase 5 · QA e produção"
+		agent: "COAE 05 QA Production"
+		prompt: "Execute a auditoria de produção completa, testes, smoke tests, backup/restore e reporte findings e riscos residuais."
 ---
 
 # COAE Builder

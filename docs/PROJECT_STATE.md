@@ -6,6 +6,18 @@ O próximo ambiente-alvo é o PC de casa com Windows, RX 7800 XT 16 GB, Ryzen 56
 
 O caminho recomendado deixou de depender de cotas Gemini: Ollama fornece texto/descrições e ComfyUI fornece imagens locais. Gemini permanece como alternativa configurável, sem fallback automático.
 
+## Agentes especializados
+
+O `COAE Builder` coordena o projeto e possui handoffs na ordem do pipeline:
+
+1. `COAE 01 Core Script` — projetos, SQLite, roteiro e Dark Planner.
+2. `COAE 02 Audio` — ingestão, FFmpeg, transcrição e timestamps.
+3. `COAE 03 Storyboard` — segmentação, histórico, edição e aprovação.
+4. `COAE 04 Local AI` — Ollama, ComfyUI, AMD/RX 7800 XT e retomada local.
+5. `COAE 05 QA Production` — regressão, smoke test, segurança e release.
+
+Os agentes foram criados como especialistas de fase e não devem instalar modelos grandes no Codespace nem substituir o COAE Builder como coordenador.
+
 ## Concluído nesta etapa
 
 - Providers configuráveis: Ollama para texto e ComfyUI local para imagens; sem fallback pago.
