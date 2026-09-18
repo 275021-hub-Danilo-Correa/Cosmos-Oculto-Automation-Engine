@@ -1,0 +1,5 @@
+# Opcional: integrar na .codex/config.toml existente, sem substituir outras opções.
+# Não altera modelo, credenciais, aprovação ou permissões do agente principal.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 2

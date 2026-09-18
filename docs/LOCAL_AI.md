@@ -123,7 +123,9 @@ Veo, thumbnails dedicadas e renderização final **não foram implementados** aq
 
 ## Handoff ao Codex do PC de casa
 
-Leia `.github/copilot-instructions.md`, `docs/PROJECT_STATE.md` e este documento.
+Leia `AGENTS.md`, `docs/AGENTES.md`, `docs/PROJECT_STATE.md` e este documento.
+Para programar no outro PC, siga primeiro `docs/AGENTES.md`; a validação com GPU
+é uma etapa separada, no computador com os serviços locais instalados.
 Confira a branch antes de editar. Preserve dados locais e nunca envie `.env`, modelos
 ou bancos ao GitHub. Teste a instalação AMD/Windows dos serviços sem usar instruções
 CUDA. Não considere fixtures de teste como evidência de qualidade de IA. Configure

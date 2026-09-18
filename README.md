@@ -18,6 +18,13 @@ O COAE não gera voz, não exige cenas de oito segundos e não publica no YouTub
 
 Consulte [docs/LOCAL_AI.md](docs/LOCAL_AI.md) para o procedimento completo no PC de casa.
 
+## Programar com Codex no outro PC
+
+Os seis perfis de desenvolvimento ficam em `.codex/agents/`, com instruções comuns
+em [AGENTS.md](AGENTS.md). Siga [docs/AGENTES.md](docs/AGENTES.md) para transferir
+esta versão, preparar o ambiente e iniciar a sessão no outro computador.
+Desenvolver com Codex e executar Ollama/ComfyUI na GPU são etapas separadas.
+
 ## Abrir no Windows
 
 1. Extraia TODO o repositório para uma pasta. Não execute de dentro do arquivo compactado.

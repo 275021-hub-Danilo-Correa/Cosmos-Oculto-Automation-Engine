@@ -8,15 +8,17 @@ O caminho recomendado deixou de depender de cotas Gemini: Ollama fornece texto/d
 
 ## Agentes especializados
 
-O `COAE Builder` coordena o projeto e possui handoffs na ordem do pipeline:
+O desenvolvimento passa a usar Codex no outro PC, com regras comuns em
+`AGENTS.md` e seis perfis nativos em `.codex/agents/`: `coae_builder`,
+`coae_core_script`, `coae_audio`, `coae_storyboard`, `coae_local_ai` e `coae_qa`.
+Instruções de transferência e uso em `docs/AGENTES.md`. Os perfis do Copilot em
+`.github/agents/` são legado; não conduzem o fluxo atual.
 
-1. `COAE 01 Core Script` — projetos, SQLite, roteiro e Dark Planner.
-2. `COAE 02 Audio` — ingestão, FFmpeg, transcrição e timestamps.
-3. `COAE 03 Storyboard` — segmentação, histórico, edição e aprovação.
-4. `COAE 04 Local AI` — Ollama, ComfyUI, AMD/RX 7800 XT e retomada local.
-5. `COAE 05 QA Production` — regressão, smoke test, segurança e release.
-
-Os agentes foram criados como especialistas de fase e não devem instalar modelos grandes no Codespace nem substituir o COAE Builder como coordenador.
+A sessão principal executa tarefas simples; delegação somente quando solicitada.
+QA usa perfil de leitura. Nenhum modelo ou esforço de raciocínio foi fixado.
+O PC de desenvolvimento não precisa ser o PC com GPU; conferir o ambiente ao chegar.
+Validação desta migração: TOML e referências locais; descoberta nativa e execução
+no Codex do outro PC continuam pendentes. Não houve alteração do backend nesta etapa.
 
 ## Concluído nesta etapa
 
