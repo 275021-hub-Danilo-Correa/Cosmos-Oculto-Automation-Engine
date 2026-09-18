@@ -10,3 +10,5 @@ backups/
 workspace/
 .venv/
 *.egg-info/
+# Configuração do workflow instalada neste computador
+workflows/sdxl_local.json

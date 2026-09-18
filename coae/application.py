@@ -13,6 +13,7 @@ import uuid
 import zipfile
 from dataclasses import asdict,fields,replace
 from .errors import CoaeError
+from .local_ai import backend, Ollama, ComfyUI
 from .audio import import_audio,verified_audio,file_sha256
 from .models import Scene,TranscriptSegment
 from .pipeline import transcribe_and_build_storyboard
@@ -176,7 +177,9 @@ class Application:
     def preflight_analysis(self,pid,semantic=False):
         row=self.audio(pid)
         if row['status']!='APPROVED':raise ValueError('Ouça e aprove o áudio primeiro.')
-        if semantic:self.preflight_gemini(pid)
+        if semantic:
+            if backend('text')=='ollama':Ollama().check()
+            else:self.preflight_gemini(pid)
         return row
 
     def analyze(self,pid,semantic=False,transcript_path=None):
@@ -204,12 +207,13 @@ class Application:
     def describe_scenes(self,pid):
         story,scenes=self.story(pid)
         payload=[asdict(s) for s in scenes]
-        for start in range(0,len(payload),20):
-            batch=payload[start:start+20]
-            if all(s['visual_description'].strip() and s['semantic_summary'].strip() for s in batch):continue
+        batch_size=4 if backend('text')=='ollama' else 20
+        for start in range(0,len(payload),batch_size):
+            batch=[s for s in payload[start:start+batch_size] if not(s['visual_description'].strip() and s['semantic_summary'].strip())]
+            if not batch:continue
             value=self.remote(pid,'writer','Planeje imagens cientificamente coerentes com os trechos da fala. Retorne {scenes:[{scene_id,semantic_summary,visual_description,visual_function,camera_direction,movement}]}. Cada descrição é autossuficiente: sujeito, ambiente, escala, composição, luz, câmera e restrições científicas; não copie simplesmente a fala. Estética documental sombria, sem texto ou rótulos. Preserve IDs e ordem. Não altere timestamps.',{'scenes':batch,'topic':self.db.get_project(pid)['title'],'sources':self.source_text(pid)[:20000]})
             rows=value.get('scenes') if isinstance(value,dict) else None
-            if not isinstance(rows,list) or [s.get('scene_id') for s in rows]!=[s['scene_id'] for s in batch]:raise ValueError('IA retornou cenas incompatíveis. Lotes anteriores preservados.')
+            if not isinstance(rows,list) or [s.get('scene_id') if isinstance(s,dict) else None for s in rows]!=[s['scene_id'] for s in batch]:raise ValueError('IA retornou cenas incompatíveis. Lotes anteriores preservados.')
             for target,new in zip(batch,rows):
                 for key in ('semantic_summary','visual_description','visual_function','camera_direction','movement'):
                     if not isinstance(new.get(key),str) or not new[key].strip():raise ValueError('Descrição incompleta recebida da IA.')
@@ -332,6 +336,15 @@ class Application:
         return self.save_story(pid,version,out)
 
     def remote(self,pid,role,task,data,image=None):
+        if role!='image' and backend('text')=='ollama':
+            self.db.get_project(pid)
+            try:
+                value,usage=Ollama().call(task,data,audit=role=='auditor',image=image)
+            except ValueError:
+                self.db.event(pid,'LOCAL_AI_FAILED',{'provider':'ollama','role':role})
+                raise
+            self.db.event(pid,'LOCAL_AI_DONE',dict(usage,role=role))
+            return value
         from .provider import Gemini
         client=Gemini();callid=None
         try:
@@ -379,6 +392,8 @@ class Application:
         self.store_audit(pid,'image',iid,[{'code':'VISUAL_REVIEW','severity':'review','message':'Confira relação com a fala, ciência, artefatos, texto e continuidade.'}])
         return {'image_id':iid}
     def image_audit(self,pid,iid):
+        if backend('image')=='comfyui' and backend('text')!='ollama':
+            raise ValueError('Para auditar imagens locais com IA, configure texto Ollama e COAE_LOCAL_VISION_MODEL. A revisão humana continua disponível.')
         image=self.db.one('SELECT * FROM images WHERE id=? AND project_id=?',(iid,pid))
         if not image:raise ValueError('Imagem inexistente.')
         story,scenes=self.story(pid,approved=True)
@@ -395,6 +410,7 @@ class Application:
         if scene_id:
             scenes=[s for s in scenes if s.scene_id==scene_id]
             if not scenes:raise ValueError('Cena inexistente.')
+        if backend('image')=='comfyui':return self.generate_local_images(pid,story,scenes)
         generated=0
         for scene in scenes:
             previous=self.db.one('SELECT * FROM images WHERE storyboard_id=? AND scene_id=? ORDER BY id DESC LIMIT 1',(story['id'],scene.scene_id))
@@ -411,6 +427,28 @@ class Application:
                 if not failures:break
                 prompt=self.prompt(scene)+' Corrija estes problemas detectados: '+dump(failures)
         return {'message':f'{generated} imagem(ns) gerada(s). Confira auditorias e revise.','generated':generated}
+    def generate_local_images(self,pid,story,scenes):
+        client=ComfyUI();generated=0
+        for scene in scenes:
+            previous=self.db.one('SELECT * FROM images WHERE storyboard_id=? AND scene_id=? ORDER BY id DESC LIMIT 1',(story['id'],scene.scene_id))
+            if previous and previous['status'] in ('APPROVED','REVIEW_REQUIRED') and Path(previous['path']).is_file() and file_sha256(Path(previous['path']))==previous['sha256']:
+                continue
+            if previous and previous['status']=='BLOCKED':
+                raise ValueError('Imagem bloqueada pela auditoria. Corrija a descrição em nova versão do storyboard ou importe uma imagem corrigida; o mesmo resultado não será reaprovado.')
+            ticket_path=self.folder(pid)/'logs'/'local_images'/f'{story["id"]}_{scene.scene_id}.json'
+            ticket=json.loads(ticket_path.read_text(encoding='utf-8')) if ticket_path.exists() else None
+            self.db.event(pid,'LOCAL_IMAGE_STARTED',{'scene_id':scene.scene_id,'storyboard_id':story['id']})
+            raw,usage=client.generate(self.prompt(scene),ticket,lambda value:atomic(ticket_path,dump(value)))
+            path=self.folder(pid)/'images'/('temp_'+uuid.uuid4().hex+'.png')
+            try:
+                atomic(path,raw);iid=self.import_image(pid,scene.scene_id,path)['image_id']
+            finally:path.unlink(missing_ok=True)
+            # No implicit cloud vision call. Technical checks + explicit human review.
+            self.db.execute("UPDATE images SET status='REVIEW_REQUIRED' WHERE id=?",(iid,))
+            self.db.event(pid,'LOCAL_IMAGE_DONE',dict(usage,scene_id=scene.scene_id,image_id=iid))
+            generated+=1
+        return {'message':f'{generated} imagem(ns) local(is) importada(s). Revisão visual humana obrigatória; use auditoria IA somente com modelo visual configurado.','generated':generated}
+
     def approve_image(self,pid,iid,note):
         story,_=self.story(pid,approved=True);self.note(note)
         image=self.db.one('SELECT * FROM images WHERE id=? AND project_id=?',(iid,pid))
@@ -463,7 +501,7 @@ class Application:
         if not p.is_relative_to(root) or not p.is_file():raise ValueError('Arquivo fora do projeto ou inexistente.')
         return p
     def state(self,pid=None):
-        if not pid:return {'projects':[dict(p) for p in self.db.list_projects()], 'configured':bool(os.getenv('GEMINI_API_KEY') and os.getenv('COAE_WRITER_MODEL') and os.getenv('COAE_AUDITOR_MODEL')),'max_calls':int(os.getenv('COAE_MAX_CALLS_PER_PROJECT','0')),'ffprobe':bool(shutil.which('ffprobe'))}
+        if not pid:return {'text_provider':backend('text'),'image_provider':backend('image'),'projects':[dict(p) for p in self.db.list_projects()], 'configured':bool(os.getenv('COAE_LOCAL_WRITER_MODEL','').strip()) if backend('text')=='ollama' else bool(os.getenv('GEMINI_API_KEY') and os.getenv('COAE_WRITER_MODEL') and os.getenv('COAE_AUDITOR_MODEL')),'max_calls':int(os.getenv('COAE_MAX_CALLS_PER_PROJECT','0')),'ffprobe':bool(shutil.which('ffprobe'))}
         project=dict(self.db.get_project(pid));data={'project':project}
         for key,table,order in [('scripts','scripts','version'),('audios','audio_files','id'),('stories','storyboards','version'),('images','images','id'),('audits','audit_runs','id'),('jobs','jobs','id'),('events','events','id'),('calls','api_calls','id')]:
             data[key]=[dict(r) for r in self.db.rows(f'SELECT * FROM {table} WHERE project_id=? ORDER BY {order} DESC',(pid,))]

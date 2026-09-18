@@ -1,3 +1,47 @@
+# Atualização 2026-09-18 — integração local preparada
+
+## Direção atual
+
+O próximo ambiente-alvo é o PC de casa com Windows, RX 7800 XT 16 GB, Ryzen 5600X e 32 GB de RAM. O Codespace atual serve para desenvolvimento e testes de protocolo; não deve receber modelos grandes nem instalações de GPU.
+
+O caminho recomendado deixou de depender de cotas Gemini: Ollama fornece texto/descrições e ComfyUI fornece imagens locais. Gemini permanece como alternativa configurável, sem fallback automático.
+
+## Concluído nesta etapa
+
+- Providers configuráveis: Ollama para texto e ComfyUI local para imagens; sem fallback pago.
+- Descrições em lotes de quatro cenas no modo local, preservando tempos e cenas já preenchidas.
+- Workflow API SDXL de exemplo; requer checkpoint instalado/configurado pelo usuário.
+- Tickets persistidos antes do envio, retomada por prompt_id, preservação das imagens prontas.
+- Revisão humana obrigatória das imagens locais; auditoria visual IA opcional com modelo capaz.
+- Diagnóstico dos serviços na aba Auditorias e tarefas; rótulos mostram o provider selecionado.
+- Perfil de configuração e handoff em docs/LOCAL_AI.md.
+- README remodelado para apresentar o fluxo local como caminho principal e Gemini como alternativa.
+
+## Validação desta etapa
+
+67 testes Python passaram, incluindo 13 testes com servidores HTTP simulados:
+JSON inválido, preservação de timestamps/descrições, imagem persistida, retomada,
+envio incerto, bloqueio de cloud, visão indisponível, nós não permitidos, diagnóstico,
+autenticação HTTP e preservação de bloqueio de auditoria. Nenhum modelo real foi chamado.
+Compilação Python, sintaxe JS e git diff --check passaram. Smoke test JSDOM + HTTP
+confirmou abertura das sete abas, criação de projeto/roteiro, botão ComfyUI local e
+diagnóstico de serviço indisponível. JSDOM não é revisão visual de navegador completo.
+
+## Pendências externas e próximo passo
+
+Não instalar Ollama, ComfyUI ou modelos grandes neste Codespace. Validar os serviços e uma imagem no Windows com RX 7800 XT 16 GB, Ryzen 5600X,
+32 GB RAM. Nenhum download de modelo nem teste real AMD/GPU ocorreu nesta entrega.
+Geração de vídeo/thumbnail, autocorreção visual local e fila global de GPU não foram
+implementadas. A fila é sequencial por projeto; não executar vários projetos na GPU
+simultaneamente durante a validação inicial. Tickets sem confirmação exigem reconciliação.
+
+As mudanças foram integradas localmente, mas ainda não foram publicadas no GitHub. No PC de casa, preserve `.env`, `data/` e `projects/`, confira a branch e execute os testes antes de instalar serviços. Siga docs/LOCAL_AI.md.
+
+---
+
+O registro abaixo é histórico da versão anterior. Suas validações pertencem às
+respectivas sessões e não substituem as limitações explicitadas acima.
+
 # Estado do projeto · v0.2
 
 ## Implementado
