@@ -25,6 +25,31 @@ em [AGENTS.md](AGENTS.md). Siga [docs/AGENTES.md](docs/AGENTES.md) para transfer
 esta versão, preparar o ambiente e iniciar a sessão no outro computador.
 Desenvolver com Codex e executar Ollama/ComfyUI na GPU são etapas separadas.
 
+## Desktop e web
+
+O mesmo estúdio pode abrir em uma janela desktop ou no navegador, compartilhando
+`data/`, `projects/` e o `.env` da pasta do projeto.
+
+- **Desktop no Windows:** execute `INSTALAR_DESKTOP_WINDOWS.bat` uma vez e abra
+  `INICIAR_DESKTOP_WINDOWS.bat`. Requer Python e Microsoft Edge WebView2 Runtime.
+- **Web:** continue usando `INICIAR_WINDOWS.bat` ou `python iniciar.py`.
+- **Terminal desktop:** `python iniciar_desktop.py`; aceita `--workspace` e `--port`.
+
+O desktop preenche o token automaticamente e mantém o servidor enquanto a janela
+estiver aberta. Para acesso também no navegador, use o link mostrado no terminal
+do desktop, sem iniciar outro servidor. Uma trava impede dois servidores novos
+no mesmo workspace; feche versões antigas antes de atualizar. Ao fechar a janela,
+requisições em andamento terminam antes da liberação do banco; aguarde tarefas
+longas e salve textos editados antes de sair.
+
+Token fixo opcional: configure `COAE_ACCESS_TOKEN` no `.env` com letras ASCII,
+números, `-` ou `_`. Vazio mantém o comportamento de gerar um token por execução.
+O `.env` é privado e precisa ser configurado separadamente no outro PC.
+
+Esta entrega é um aplicativo desktop iniciado por Python, ainda sem instalador
+`.exe` independente. Ollama, ComfyUI, FFmpeg e modelos continuam separados.
+Veja [docs/DESKTOP.md](docs/DESKTOP.md) para instalação e validação no PC.
+
 ## Abrir no Windows
 
 1. Extraia TODO o repositório para uma pasta. Não execute de dentro do arquivo compactado.

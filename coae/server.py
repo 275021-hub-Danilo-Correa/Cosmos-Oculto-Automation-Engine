@@ -27,8 +27,15 @@ def load_env():
 class Server(ThreadingHTTPServer):
     daemon_threads=True
     def __init__(self,address,app):
-        self.app=app;self.token=secrets.token_urlsafe(32);self.uploads={};self.temp=tempfile.TemporaryDirectory(prefix='coae-upload-');self.command_lock=threading.RLock()
-        super().__init__(address,Handler)
+        token=os.environ.get('COAE_ACCESS_TOKEN','').strip()
+        if token and any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in token):
+            raise ValueError('COAE_ACCESS_TOKEN deve conter apenas letras ASCII, números, hífen ou sublinhado.')
+        self.app=app;self.token=token or secrets.token_urlsafe(32);self.uploads={};self.temp=tempfile.TemporaryDirectory(prefix='coae-upload-');self.command_lock=threading.RLock()
+        try:
+            super().__init__(address,Handler)
+        except BaseException:
+            self.temp.cleanup()
+            raise
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args):pass
@@ -123,12 +130,17 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     load_env();parser=argparse.ArgumentParser(description='Estúdio local Cosmos Oculto')
     parser.add_argument('--port',type=int,default=8765);parser.add_argument('--host',default='127.0.0.1');parser.add_argument('--workspace',default=str(BASE));parser.add_argument('--no-browser',action='store_true')
-    args=parser.parse_args();app=Application(args.workspace);server=Server((args.host,args.port),app)
-    url=f'http://localhost:{server.server_port}/#token={server.token}'
-    print('\nCOSMOS OCULTO — narração externa, cenas pela fala\nAbra: '+url+'\nMantenha este terminal aberto. Ctrl+C para encerrar.\n',flush=True)
-    if not args.no_browser:threading.Timer(.4,lambda:webbrowser.open(url)).start()
-    try:server.serve_forever()
-    except KeyboardInterrupt:pass
-    finally:server.server_close();server.temp.cleanup()
+    args=parser.parse_args()
+    from .runtime import running_server
+    try:
+        with running_server(args.workspace, args.host, args.port) as server:
+            url=f'http://localhost:{server.server_port}/#token={server.token}'
+            print('\nCOSMOS OCULTO — narração externa, cenas pela fala\nAbra: '+url+'\nMantenha este terminal aberto. Ctrl+C para encerrar.\n',flush=True)
+            if not args.no_browser:webbrowser.open(url)
+            threading.Event().wait()
+    except KeyboardInterrupt:
+        pass
+    except (OSError, RuntimeError, ValueError) as exc:
+        parser.exit(1, f'Não foi possível iniciar o COAE: {exc}\n')
 
 if __name__=='__main__':main()

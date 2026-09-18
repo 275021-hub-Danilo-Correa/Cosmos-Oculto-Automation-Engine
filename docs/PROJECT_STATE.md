@@ -1,3 +1,27 @@
+## Atualização — modos desktop e web
+
+- Janela opcional pywebview em `coae/desktop.py`, com entrada `iniciar_desktop.py`
+  e atalhos de instalação/execução Windows. Web permanece em `iniciar.py`.
+- Mesmo backend, SQLite e interface. Token automático na janela; token fixo opcional.
+- Ciclo compartilhado em `coae/runtime.py`: trava por workspace, porta reservada
+  antes de abrir o banco, encerramento aguardando requisições e limpeza de recursos.
+- Desktop permite acesso web pelo link do mesmo servidor. Dependências gráficas
+  são opcionais; serviços locais de IA continuam separados.
+- Testes de ciclo de vida usam HTTP/SQLite reais e GUI simulada. Validação visual,
+  seletor de arquivos, áudio/downloads WebView2 e BATs seguem pendentes no Windows.
+- Não há executável independente; procedimento em `docs/DESKTOP.md`.
+- Validação desta entrega: 77 testes passaram, compilação Python e diff sem erros;
+  smoke do comando web confirmou HTTP 200 autenticado, saída e liberação da trava.
+  Dois testes HTTP existentes emitiram ResourceWarning de respostas de erro não
+  fechadas, sem falhas. Nenhum modelo ou GUI real foi executado.
+
+## Atualização — token de acesso persistente
+
+O servidor aceita `COAE_ACCESS_TOKEN` no `.env` para manter o acesso entre reinícios.
+Ausente ou vazio preserva o token aleatório por execução. Use letras ASCII, números,
+hífen ou sublinhado; outros caracteres são recusados antes de abrir o servidor.
+O valor privado não é versionado. Validação dirigida em `tests/test_server_token.py`.
+
 # Atualização 2026-09-18 — integração local preparada
 
 ## Direção atual

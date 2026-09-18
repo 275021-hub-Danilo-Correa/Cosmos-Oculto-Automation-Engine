@@ -12,3 +12,6 @@ workspace/
 *.egg-info/
 # Configuração do workflow instalada neste computador
 workflows/sdxl_local.json
+
+# Trava local compartilhada pelos modos web e desktop
+.coae.lock

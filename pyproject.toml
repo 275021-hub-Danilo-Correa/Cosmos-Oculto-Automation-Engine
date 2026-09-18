@@ -8,9 +8,13 @@ version = "0.2.0"
 description = "Cosmos Oculto Automation Engine"
 requires-python = ">=3.12"
 
+[project.optional-dependencies]
+desktop = ["pywebview>=5,<7"]
+
 [project.scripts]
 coae = "coae.cli:main"
 coae-studio = "coae.server:main"
+coae-desktop = "coae.desktop:main"
 
 [tool.setuptools.packages.find]
 include = ["coae*"]
