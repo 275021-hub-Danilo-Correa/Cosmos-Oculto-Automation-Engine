@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A descrição visual e o texto de referência estão alinhados, descrevendo um céu noturno com estrelas.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A descrição visual não menciona elementos contraditórios à fala, como arquitetura ou objetos artificiais.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A descrição 'estrelas em diferentes fases de sua existência' é uma afirmação científica, mas a imagem em si não demonstra essa variação. A descrição visual precisa ser mais detalhada para suportar essa afirmação.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A qualidade visual da imagem é adequada para o propósito de estabelecer a cena. A resolução é suficiente para identificar os elementos descritos.",
+      "severity": "review"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Considerar adicionar detalhes à descrição visual que ilustrem as diferentes fases das estrelas, como variações de brilho ou cores, para fortalecer a conexão com o texto de referência.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 43
+}

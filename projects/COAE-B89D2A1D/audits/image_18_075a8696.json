@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição visual da fala: um céu noturno com estrelas em diferentes fases de vida.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A fala menciona 'fases de sua existência', mas a imagem não demonstra visualmente essa variação de fases. A representação de estrelas como pontos brilhantes não captura a complexidade das fases de vida estelares.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação visual de estrelas em 'diferentes fases de vida' é uma simplificação da astronomia. As fases de vida de uma estrela (nascimento, vida principal, morte) são processos extremamente longos e complexos, que não podem ser adequadamente representados em uma única imagem. A imagem não aborda a escala de tempo envolvida.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A imagem apresenta um céu noturno com uma quantidade excessiva de estrelas, o que pode resultar em uma composição visual confusa e pouco realista. A falta de detalhes e a uniformidade da iluminação das estrelas comprometem o realismo da imagem.",
+      "severity": "review"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Recomenda-se adicionar detalhes que sugiram a escala de tempo e a complexidade das fases de vida estelares. Poderia-se incluir elementos como nebulosas, aglomerados estelares ou representações visuais de processos como fusão nuclear. A redução da quantidade de estrelas e a adição de elementos que contextualizem a imagem aumentariam o impacto visual e a precisão científica.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 37
+}

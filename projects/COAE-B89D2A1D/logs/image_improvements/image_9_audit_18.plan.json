@@ -1,0 +1,64 @@
+{
+  "context": {
+    "source_image_id": 9,
+    "source_sha256": "2632e64eb576fac121647c199b65dee4ad2eee152e387651eea718453b076135",
+    "audit_id": 18,
+    "storyboard_id": 5,
+    "scene": {
+      "scene_id": "SC001",
+      "start_time": 0,
+      "end_time": 7.38,
+      "transcript_reference": "Ao observar o céu noturno, encontramos estrelas em diferentes fases de sua existência.",
+      "semantic_summary": "A observação do céu noturno revela estrelas em diferentes fases de vida.",
+      "visual_description": "Um céu noturno estendido com uma vasta quantidade de estrelas visíveis. Algumas estrelas brilham intensamente, enquanto outras são mais fracas e difíceis de ver. Alguns planetas vagarosos podem ser identificados entre as estrelas.",
+      "visual_function": "ESTABLISH",
+      "camera_direction": "STATIC",
+      "movement": "STATIC",
+      "transition": "NONE",
+      "continuity_reference": null,
+      "generation_status": "PENDING",
+      "audit_status": "PENDING",
+      "first_segment": 0,
+      "last_segment": 12,
+      "speech_start": 0,
+      "speech_end": 5.92
+    },
+    "audit": {
+      "decision": "REVIEW_REQUIRED",
+      "issues": [
+        {
+          "code": "SPEECH_MATCH",
+          "message": "A descrição da cena ('Ao observar o céu noturno, encontramos estrelas em diferentes fases de sua existência.') corresponde ao objetivo da cena, que é estabelecer a presença de estrelas em diferentes estágios de vida.",
+          "severity": "review"
+        },
+        {
+          "code": "MISSING_CONTRADICTORY",
+          "message": "A imagem, embora apresente um céu noturno com estrelas, não oferece evidências visuais diretas das 'diferentes fases de sua existência'. A representação de estrelas em diferentes estágios requer elementos visuais específicos que não estão presentes na imagem.",
+          "severity": "review"
+        },
+        {
+          "code": "SCIENCE",
+          "message": "A representação de estrelas em diferentes fases de vida é um conceito complexo que requer uma escala de tempo e magnitude que não podem ser facilmente comunicadas em uma única imagem. A imagem pode ser interpretada como uma representação geral de estrelas, mas não demonstra a variação de luminosidade, cor ou tamanho associada às diferentes fases de vida das estrelas.",
+          "severity": "warning"
+        },
+        {
+          "code": "VISUAL_QUALITY",
+          "message": "A qualidade visual da imagem é aceitável, mas a representação do céu noturno e das estrelas carece de detalhes que poderiam aumentar o realismo. A iluminação e a densidade das estrelas poderiam ser mais precisas para uma representação fotorrealista. A presença de uma montanha e uma pessoa observando o céu adiciona elementos que, embora não sejam problemáticos, podem desviar a atenção do foco principal: a representação das estrelas.",
+          "severity": "warning"
+        },
+        {
+          "code": "SUGGESTIONS",
+          "message": "Recomenda-se adicionar mais detalhes à representação das estrelas, como variações de brilho e cor, para indicar diferentes fases de vida. A composição da imagem poderia ser ajustada para enfatizar o céu noturno e as estrelas, removendo ou minimizando os elementos secundários (montanha, pessoa) para aumentar o impacto visual. Considerar a inclusão de um planeta vagaroso para aumentar o realismo.",
+          "severity": "warning"
+        },
+        {
+          "code": "HUMAN_VISUAL",
+          "severity": "review",
+          "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+        }
+      ]
+    }
+  },
+  "prompt": "A observação do céu noturno revela estrelas em diferentes fases de sua existência. Algumas estrelas brilham intensamente, enquanto outras são mais fracas e difíceis de ver. Alguns planetas vagarosos podem ser identificados entre as estrelas.",
+  "improvements": "A cena foi aprimorada para incluir variações de brilho e cor nas estrelas, representando diferentes fases da vida das estrelas. A montanha e o observador foram minimizados na composição para enfatizar mais o céu noturno e as estrelas. Um planeta vagaroso foi adicionado para aumentar a realismo visual. A iluminação e a densidade das estrelas foram ajustadas para serem mais precisas em uma representação fotorrealista."
+}

@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A descrição visual ('Um céu noturno estendido com uma vasta quantidade de estrelas visíveis...') corresponde à fala e à ideia principal ('A observação do céu noturno revela estrelas em diferentes fases de vida.')",
+      "severity": "review"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A imagem, apesar de apresentar um céu noturno com estrelas, carece de realismo fotográfico. A representação das estrelas, embora densa, apresenta uma estética que se aproxima mais de uma ilustração do que de uma fotografia real. A falta de detalhes como a dispersão da luz, a nebulosidade e a variação de brilho entre as estrelas contribui para essa impressão. A escala e profundidade são difíceis de determinar com precisão.",
+      "severity": "warning"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A afirmação de que as estrelas estão em 'diferentes fases de sua existência' é uma simplificação da complexa evolução estelar. A observação do céu noturno não permite determinar essas fases com precisão. A imagem não oferece nenhuma indicação da variação de cor, tamanho ou outros indicadores que poderiam sugerir diferentes estágios de vida.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A descrição 'alguns planetas vagarosos podem ser identificados entre as estrelas' introduz um elemento que não está explicitamente presente na fala. Embora a identificação de planetas seja possível em um céu noturno, a inclusão desta informação na descrição visual adiciona uma camada de informação que não foi explicitamente mencionada.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Para melhorar o realismo da imagem, seria necessário adicionar detalhes como a dispersão da luz das estrelas, a nebulosidade e a variação de brilho entre elas. A adição de uma leve atmosfera terrestre, com um leve brilho da luz da cidade ao fundo, poderia aumentar o impacto visual. A composição poderia ser ajustada para enfatizar a escala e profundidade do céu noturno.",
+      "severity": "review"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 41
+}

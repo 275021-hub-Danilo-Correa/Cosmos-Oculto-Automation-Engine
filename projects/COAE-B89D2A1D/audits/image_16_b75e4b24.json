@@ -1,0 +1,11 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "VISUAL_REVIEW",
+      "severity": "review",
+      "message": "Confira realismo fotográfico obrigatório, relação com a fala, ciência, artefatos, texto e continuidade. Desenhos, cartoons, anime e aparência de animação não são aceitos."
+    }
+  ],
+  "id": 32
+}

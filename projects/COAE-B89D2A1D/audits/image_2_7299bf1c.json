@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem representa visualmente a descrição da fala: uma nuvem de gás e poeira em contração, indicando o início da formação de uma estrela.",
+      "severity": "review"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A representação da nuvem de gás e poeira, embora em tons escuros, carece de detalhes que a tornem visualmente convincente como um fenômeno astronômico real. A forma é excessivamente irregular e a iluminação não sugere a complexidade da interação da luz com a nuvem. A estética geral se aproxima mais de uma ilustração do que de uma representação fotorrealista.",
+      "severity": "warning"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A imagem simplifica excessivamente o processo de formação estelar. A contração da nuvem é apenas o primeiro passo de um processo complexo que envolve fusão nuclear e a formação de uma protoestrela. A representação não captura a escala temporal e as forças envolvidas.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A imagem não demonstra a ação da gravidade mencionada na fala, embora a representação da nuvem sugira uma força atuante. Uma representação mais explícita da força gravitacional seria benéfica.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Recomenda-se adicionar detalhes à nuvem de gás e poeira para aumentar o realismo visual. A iluminação deve ser mais complexa, simulando a dispersão da luz em um ambiente espacial. Considerar a inclusão de elementos que representem a interação da luz com a nuvem, como reflexos e sombras.",
+      "severity": "review"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 29
+}

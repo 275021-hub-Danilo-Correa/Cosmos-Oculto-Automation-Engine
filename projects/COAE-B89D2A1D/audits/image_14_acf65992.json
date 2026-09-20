@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição da fala, apresentando um céu noturno com múltiplas estrelas em diferentes níveis de brilho, o que se alinha com a ideia de 'estrelas em diferentes fases de sua existência'.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A representação do céu noturno é genérica e não oferece detalhes específicos sobre as 'fases de vida' das estrelas. A imagem não demonstra visualmente as diferentes etapas de um ciclo estelar, como nascimento, vida adulta ou morte.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação de um céu noturno com múltiplas estrelas é uma simplificação da realidade. A densidade e distribuição das estrelas variam significativamente em diferentes regiões do espaço, e a imagem não reflete essa complexidade. A ideia de 'fases de vida' das estrelas requer uma escala de tempo e processos físicos que não são visualizados aqui.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A qualidade visual da imagem é boa, com um céu noturno realista e estrelas bem definidas. No entanto, a composição poderia ser mais dinâmica para enfatizar a vastidão do espaço. A ausência de elementos como nebulosas ou galáxias distantes limita o impacto visual.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Considerar a inclusão de elementos que representem a escala cósmica, como uma nebulosa distante ou uma galáxia espiral, para complementar a ideia de 'fases de vida' das estrelas. Adicionar um leve efeito de 'ruído' no céu para simular a emissão de luz das estrelas poderia aumentar o realismo.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 28
+}

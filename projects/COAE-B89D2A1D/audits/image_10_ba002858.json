@@ -1,0 +1,35 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A descrição da cena ('Ao observar o céu noturno, encontramos estrelas em diferentes fases de sua existência.') corresponde à ideia principal da imagem, que mostra uma vasta quantidade de estrelas visíveis.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A imagem apresenta um céu noturno com estrelas, mas não fornece informações sobre as 'fases de vida' das estrelas mencionadas na fala. A representação visual não oferece evidências diretas dessa informação.",
+      "severity": "warning"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação de um céu noturno com estrelas é visualmente plausível, mas a escala temporal das 'fases de vida' das estrelas não é comunicada. A imagem não permite inferências sobre a duração dessas fases ou a relação entre elas.",
+      "severity": "review"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A imagem apresenta um céu noturno com uma composição que pode ser considerada realista, mas a iluminação e o contraste poderiam ser aprimorados para aumentar o impacto visual e a legibilidade das estrelas. A presença de um planeta visível é um detalhe positivo.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Recomenda-se adicionar mais detalhes para enriquecer a cena, como a nebulosidade do espaço, a presença de uma galáxia distante ou a influência da atmosfera terrestre na observação das estrelas. A adição de uma fonte de luz adicional (além do planeta) poderia aumentar o realismo da cena.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ]
+}

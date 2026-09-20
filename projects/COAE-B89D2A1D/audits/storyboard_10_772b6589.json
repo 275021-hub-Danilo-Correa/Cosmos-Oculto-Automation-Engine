@@ -1,0 +1,15 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "LONG",
+      "message": "SC001: cena longa; confira se contém mais de uma ideia.",
+      "severity": "warning"
+    },
+    {
+      "code": "TIMING_REVIEW",
+      "message": "Ouça os cortes, confira reconhecimento de fala, correspondência visual e rigor científico.",
+      "severity": "review"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A transcrição e a descrição visual estão alinhadas e representam uma observação do céu noturno com estrelas em diferentes fases de vida.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A imagem estabelece um ambiente fotorrealista do céu noturno, com uma densidade de estrelas adequada e uma composição legível. A escala e profundidade são razoáveis, embora a representação de estrelas individuais possa ser imprecisa devido à natureza da representação visual.",
+      "severity": "warning"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A descrição visual incorpora conceitos científicos relacionados à existência de estrelas e seus estágios de vida, embora não forneça detalhes específicos sobre as fases de vida das estrelas. A representação visual é adequada para estabelecer o contexto científico.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Considerar adicionar detalhes sutis que sugiram a vastidão do espaço e a dificuldade de observar estrelas distantes, sem comprometer a qualidade visual.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "Não há contradições aparentes entre a transcrição e a descrição visual.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 42
+}

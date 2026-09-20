@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição visual da fala, apresentando um céu noturno com múltiplas estrelas em diferentes níveis de brilho.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A fala menciona 'fases de sua existência' das estrelas, o que implica um espectro de tempo e processos evolutivos. A imagem, por ser uma representação estática do céu noturno, não demonstra visualmente essa variação temporal ou os processos físicos envolvidos.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação de um céu noturno, por mais fotorrealista que seja, é uma simplificação da complexidade do espaço interestelar. Não permite a visualização de fenômenos como nebulosas, poeira cósmica, ou a distribuição de estrelas em galáxias, que são cruciais para entender as 'fases de existência' das estrelas.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A imagem apresenta um alto nível de realismo fotográfico, com uma quantidade significativa de estrelas e um fundo escuro. No entanto, a composição é estática e carece de elementos que contextualizem a escala do universo ou a dinâmica do espaço. A ausência de elementos como nebulosas ou galáxias limita o impacto visual.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Considerar a inclusão de elementos que sugiram a escala cósmica, como uma nebulosa distante ou uma galáxia em segundo plano, poderia enriquecer a representação visual e reforçar a ideia de 'fases de existência' das estrelas. Uma leve variação na iluminação das estrelas também poderia adicionar realismo.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 35
+}

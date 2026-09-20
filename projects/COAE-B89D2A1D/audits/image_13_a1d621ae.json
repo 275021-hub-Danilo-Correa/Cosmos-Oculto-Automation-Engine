@@ -1,0 +1,36 @@
+{
+  "decision": "BLOCKED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição da cena: um céu noturno com diversas estrelas em diferentes fases de vida, conforme a fala.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A descrição da fala ('estrelas em diferentes fases de sua existência') não é diretamente representada na imagem. A visualização de estrelas em um céu noturno não implica necessariamente uma representação visual das fases de vida estelar, que são um conceito complexo e de longo prazo.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação visual de estrelas em um céu noturno é uma simplificação da realidade. A escala de tempo das fases de vida estelar é imensa, e a imagem não consegue transmitir essa escala. Além disso, a identificação de 'fases' de estrelas requer observações astronômicas sofisticadas, que não são evidentes na imagem.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A imagem, embora visualmente agradável, carece de realismo fotográfico. A representação das estrelas como pontos brilhantes em um céu escuro é uma simplificação excessiva da aparência real do céu noturno, que apresenta nuances de cor, brilho e turbulência atmosférica. A ausência de artefatos visuais típicos de imagens astronômicas (ruído, aberrações ópticas) também contribui para a falta de realismo.",
+      "severity": "error"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Recomenda-se adicionar detalhes que sugiram a vastidão do espaço e a escala de tempo das fases estelares. Poderia-se incluir elementos como nebulosas, galáxias distantes ou representações visuais de processos astronômicos como a fusão nuclear. A imagem poderia se beneficiar de uma composição mais complexa e realista, com efeitos de luz e sombra mais sutis.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 26
+}

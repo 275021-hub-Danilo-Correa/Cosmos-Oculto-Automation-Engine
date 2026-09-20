@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição da cena, apresentando um céu noturno com estrelas visíveis.",
+      "severity": "warning"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A descrição da fala ('estrelas em diferentes fases de sua existência') não é visualizada na imagem. A representação das estrelas é estática, sem indicação de fases ou processos evolutivos.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação de estrelas em diferentes fases de vida é um conceito complexo e desafiador de visualizar em uma única imagem. A imagem simplifica excessivamente a escala de tempo e os processos astrofísicos.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A qualidade visual é boa, com uma composição que permite a visualização das estrelas. No entanto, a representação do céu noturno carece de detalhes que poderiam aumentar o realismo, como a presença de nebulosas ou poeira interestelar.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Considerar a adição de elementos que sugiram a vastidão do espaço, como uma paisagem terrestre distante ou a inclusão de uma nebulosa para contextualizar a localização das estrelas, aprimoraria a narrativa visual.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 23
+}

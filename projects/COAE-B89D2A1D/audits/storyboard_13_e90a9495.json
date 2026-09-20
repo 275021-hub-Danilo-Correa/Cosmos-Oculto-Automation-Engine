@@ -1,0 +1,10 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "TIMING_REVIEW",
+      "message": "Ouça os cortes, confira reconhecimento de fala, correspondência visual e rigor científico.",
+      "severity": "review"
+    }
+  ]
+}

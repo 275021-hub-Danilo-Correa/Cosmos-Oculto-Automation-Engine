@@ -1,0 +1,10 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "VISUAL_REVIEW",
+      "severity": "review",
+      "message": "Confira relação com a fala, ciência, artefatos, texto e continuidade."
+    }
+  ]
+}

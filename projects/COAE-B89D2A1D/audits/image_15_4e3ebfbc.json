@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição da cena inicial, apresentando um céu noturno com estrelas visíveis em diferentes intensidades.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A fala menciona 'fases de sua existência' das estrelas, mas a imagem não demonstra visualmente essa variação de fases. A representação das estrelas é genérica, sem indicar processos de nascimento, vida ou morte.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação de um céu noturno, mesmo fotorrealista, é uma simplificação da complexidade da astronomia. A escala de tempo das fases de vida das estrelas é imensa e não pode ser totalmente capturada em uma única imagem. A imagem não permite inferir a magnitude das diferenças entre as fases.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A qualidade visual da imagem é boa, com um céu noturno realista e uma boa quantidade de estrelas visíveis. No entanto, a composição poderia ser mais dinâmica, talvez com um horizonte mais definido ou um elemento focal mais claro para direcionar o olhar do espectador. A ausência de elementos como a lua ou outros corpos celestes contribui para uma representação mais básica.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Para melhorar a representação da fala, seria benéfico adicionar elementos que sugiram a passagem do tempo e a variação das fases das estrelas. Isso poderia ser feito através de uma leve mudança na iluminação, indicando o movimento do sol, ou através da inclusão de elementos que representem a escala de tempo da existência estelar (embora de forma sutil e não literal).",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 31
+}

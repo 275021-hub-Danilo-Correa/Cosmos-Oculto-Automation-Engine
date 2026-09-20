@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A imagem corresponde à descrição da cena: um acampamento sob um céu noturno com estrelas visíveis. A fase de existência das estrelas não é diretamente representada, mas a imagem estabelece o contexto da observação.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A fala menciona 'estrelas em diferentes fases de sua existência', mas a imagem mostra apenas um momento estático do céu noturno. Não há representação visual direta dessas fases.",
+      "severity": "review"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação do céu noturno é fotorrealista, mas a escala das estrelas e a profundidade do espaço são impossíveis de representar com precisão em uma única imagem. A imagem não pode indicar a vastidão do tempo e espaço envolvidos na existência das estrelas.",
+      "severity": "warning"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A qualidade visual da imagem é alta, com um céu noturno detalhado e estrelas visíveis. No entanto, a composição poderia ser ligeiramente aprimorada para enfatizar o acampamento e o céu noturno, evitando um leve desequilíbrio na composição.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Considerar a adição de uma leve nebulosidade no céu para aumentar o realismo e a profundidade da imagem. Uma leve iluminação adicional no acampamento poderia melhorar o contraste e a definição do objeto.",
+      "severity": "warning"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 24
+}

@@ -1,0 +1,36 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SPEECH_MATCH",
+      "message": "A descrição visual ('Um céu noturno estendido com uma vasta quantidade de estrelas visíveis...') corresponde à fala ('Ao observar o céu noturno, encontramos estrelas em diferentes fases de sua existência.') e à ideia principal.",
+      "severity": "review"
+    },
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A imagem, apesar de representar um céu noturno, não demonstra visualmente as 'diferentes fases de sua existência'. A representação de estrelas em diferentes estágios evolutivos requer uma representação mais complexa e não se limita a uma simples paisagem noturna. A escala e a profundidade da imagem não permitem a visualização dessa complexidade.",
+      "severity": "warning"
+    },
+    {
+      "code": "SCIENCE",
+      "message": "A representação de estrelas em 'diferentes fases de sua existência' é um conceito complexo da astronomia, envolvendo processos de nascimento, vida e morte de estrelas, que não podem ser adequadamente comunicados apenas através de uma imagem estática. A imagem não oferece nenhuma indicação visual desses processos.",
+      "severity": "review"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "Embora a imagem seja tecnicamente realista em termos de iluminação e composição, a representação das estrelas carece de detalhes que seriam esperados em uma imagem fotográfica realista de um céu noturno. A densidade das estrelas e a variação de brilho são insuficientes para transmitir a escala e a complexidade do universo.",
+      "severity": "warning"
+    },
+    {
+      "code": "SUGGESTIONS",
+      "message": "Recomenda-se adicionar mais detalhes à representação das estrelas, incluindo variações de brilho, cores e talvez até mesmo a nebulosidade em torno de algumas delas, para melhor ilustrar a ideia de 'diferentes fases de sua existência'. A adição de uma leve textura ao céu, simulando a atmosfera, também poderia melhorar a qualidade visual.",
+      "severity": "review"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "severity": "review",
+      "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+    }
+  ],
+  "id": 39
+}

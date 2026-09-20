@@ -1,0 +1,21 @@
+{
+  "decision": "BLOCKED",
+  "issues": [
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A imagem mostra faixas verticais decorativas com estrelas, composi??o incompat?vel com o c?u noturno da fala.",
+      "severity": "error"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "As faixas artificiais impedem o acabamento fotogr?fico realista esperado para esta cena.",
+      "severity": "error"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "message": "Reprova??o humana registrada ap?s inspe??o dos pixels; n?o ? aprova??o cient?fica autom?tica.",
+      "severity": "review"
+    }
+  ],
+  "id": 45
+}

@@ -1,0 +1,15 @@
+{
+  "decision": "REVIEW_REQUIRED",
+  "issues": [
+    {
+      "code": "SOURCES",
+      "severity": "review",
+      "message": "Cadastre e confira as fontes científicas. Não há pesquisa automática nesta versão."
+    },
+    {
+      "code": "EDITORIAL",
+      "severity": "review",
+      "message": "Confira ciência, promessa, progressão, pronúncias e encerramento."
+    }
+  ]
+}

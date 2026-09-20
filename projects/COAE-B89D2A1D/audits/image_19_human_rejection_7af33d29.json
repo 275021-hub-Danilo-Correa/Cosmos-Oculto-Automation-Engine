@@ -1,0 +1,21 @@
+{
+  "decision": "BLOCKED",
+  "issues": [
+    {
+      "code": "MISSING_CONTRADICTORY",
+      "message": "A imagem mostra uma fotografia emoldurada com paisagem e animal, elementos alheios ? fala desta cena.",
+      "severity": "error"
+    },
+    {
+      "code": "VISUAL_QUALITY",
+      "message": "A moldura e a paisagem desviam o enquadramento do assunto celeste solicitado.",
+      "severity": "error"
+    },
+    {
+      "code": "HUMAN_VISUAL",
+      "message": "Reprova??o humana registrada ap?s inspe??o dos pixels; n?o ? aprova??o cient?fica autom?tica.",
+      "severity": "review"
+    }
+  ],
+  "id": 44
+}

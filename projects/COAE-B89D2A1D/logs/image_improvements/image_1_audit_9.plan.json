@@ -1,0 +1,64 @@
+{
+  "context": {
+    "source_image_id": 1,
+    "source_sha256": "16ea9570404e0ad9aead044f8281dd5997692801900ef0320fa067de2a308fff",
+    "audit_id": 9,
+    "storyboard_id": 5,
+    "scene": {
+      "scene_id": "SC001",
+      "start_time": 0,
+      "end_time": 7.38,
+      "transcript_reference": "Ao observar o céu noturno, encontramos estrelas em diferentes fases de sua existência.",
+      "semantic_summary": "A observação do céu noturno revela estrelas em diferentes fases de vida.",
+      "visual_description": "Um céu noturno estendido com uma vasta quantidade de estrelas visíveis. Algumas estrelas brilham intensamente, enquanto outras são mais fracas e difíceis de ver. Alguns planetas vagarosos podem ser identificados entre as estrelas.",
+      "visual_function": "ESTABLISH",
+      "camera_direction": "STATIC",
+      "movement": "STATIC",
+      "transition": "NONE",
+      "continuity_reference": null,
+      "generation_status": "PENDING",
+      "audit_status": "PENDING",
+      "first_segment": 0,
+      "last_segment": 12,
+      "speech_start": 0,
+      "speech_end": 5.92
+    },
+    "audit": {
+      "decision": "REVIEW_REQUIRED",
+      "issues": [
+        {
+          "code": "SPEECH_MATCH",
+          "message": "A imagem demonstra um céu noturno com uma grande concentração de estrelas, o que corresponde à descrição da fala e da ideia principal.",
+          "severity": "review"
+        },
+        {
+          "code": "MISSING_CONTRADICTORY",
+          "message": "A fala menciona 'fases de sua existência' das estrelas, mas a imagem não oferece evidências visuais diretas para ilustrar essas fases. A representação das estrelas é genérica, sem indicação de variações de brilho ou cor que pudessem sugerir diferentes estágios.",
+          "severity": "warning"
+        },
+        {
+          "code": "SCIENCE",
+          "message": "A imagem, por si só, não permite determinar a escala temporal das 'fases de vida' das estrelas. A vastidão do céu noturno dificulta a percepção das diferenças de brilho que poderiam indicar estágios evolutivos distintos. A observação de estrelas é limitada pela atmosfera terrestre e pela resolução da imagem.",
+          "severity": "review"
+        },
+        {
+          "code": "VISUAL_QUALITY",
+          "message": "A composição da imagem é boa, com uma grande área do céu noturno em destaque. No entanto, a falta de detalhes em algumas estrelas e a presença de um leve desfoque podem comprometer a legibilidade e a apreciação da complexidade do céu. A presença de uma nuvem/nuvens no céu pode dificultar a identificação de estrelas.",
+          "severity": "warning"
+        },
+        {
+          "code": "SUGGESTIONS",
+          "message": "Considerar a inclusão de elementos visuais que representem a escala temporal das estrelas, como uma legenda ou um diagrama, poderia enriquecer a compreensão da fala. A adição de elementos de contexto, como a localização geográfica da observação, poderia aumentar o valor informativo da imagem.",
+          "severity": "warning"
+        },
+        {
+          "code": "HUMAN_VISUAL",
+          "severity": "review",
+          "message": "Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar."
+        }
+      ]
+    }
+  },
+  "prompt": "A observação do céu noturno revela estrelas em diferentes fases de vida, incluindo jovens estrelas brilhantes e velhas estrelas mais fracas. Algumas estrelas são de cores distintas, indicando estágios evolutivos variados. A imagem captura um céu noturno vasto com estrelas de diferentes intensidades, planetas vagarosos identificados entre elas.",
+  "improvements": "Aplicamos a sugestão de incluir elementos visuais que representem as fases de vida das estrelas. A imagem agora apresenta estrelas de cores distintas e intensidades variadas, refletindo diferentes estágios evolutivos. Além disso, reduzimos o desfoque para melhorar a legibilidade, permitindo uma observação mais clara do céu noturno."
+}
