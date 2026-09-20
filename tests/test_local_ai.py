@@ -121,6 +121,27 @@ class LocalTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Configuração mudou'):
             client.generate('A planet.',saved[-1],lambda x:None)
 
+    def test_realistic_style_and_actual_negative_conditioning_preserve_workflow(self):
+        from coae.visual_style import REALISTIC_STYLE, NON_REALISTIC_NEGATIVE
+        client=ComfyUI();original=json.loads(json.dumps(client.workflow))
+        client.generate('A star.',None,lambda x:None)
+        submitted=next(d['prompt'] for p,d in self.service.calls if p=='/prompt')
+        self.assertTrue(submitted[client.positive]['inputs']['text'].startswith(REALISTIC_STYLE))
+        for node in submitted.values():
+            if node['class_type']=='KSampler':
+                key=node['inputs']['negative'][0]
+                self.assertIn(NON_REALISTIC_NEGATIVE,submitted[key]['inputs']['text'])
+                self.assertIn(original[key]['inputs']['text'],submitted[key]['inputs']['text'])
+        self.assertEqual(client.workflow,original)
+
+    def test_negative_must_not_reuse_positive_encoder(self):
+        client=ComfyUI()
+        for node in client.workflow.values():
+            if node['class_type']=='KSampler':node['inputs']['negative']=[client.positive,0]
+        with self.assertRaisesRegex(ValueError,'negativo separado'):
+            client.generate('A star.',None,lambda x:None)
+        self.assertFalse(any(p=='/prompt' for p,d in self.service.calls))
+
     def test_unknown_submission_is_not_repeated(self):
         client=ComfyUI();saved=[];original=client.http.request
         def fail(route,*args,**kwargs):

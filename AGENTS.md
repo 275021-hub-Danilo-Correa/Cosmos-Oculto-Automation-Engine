@@ -24,6 +24,10 @@ não são a fonte dos perfis Codex. Não conceda permissões adicionais por caus
 
 ## Regras do produto
 
+- Imagens devem ter aparência fotográfica realista. Não aceitar desenho, cartoon,
+  anime, pintura, ilustração ou estética de animação/3D estilizado, inclusive em
+  regenerações. Visualizações científicas fotorrealistas não são fotografias reais.
+  Aplicar a regra nos prompts e na auditoria; a saída do modelo exige conferência.
 - Narração final é externa no Dark Planner; não adicionar TTS interno.
 - Tags `<break>` são pausas de narração, nunca timestamps finais de cenas.
 - Áudio importado é a fonte temporal; preservar original, hash e linhagem.

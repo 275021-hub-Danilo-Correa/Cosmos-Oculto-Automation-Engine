@@ -1,1 +1,44 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cosmos Oculto · Produção pela fala</title><link rel="stylesheet" href="/style.css"></head><body><aside><a class="brand" href="/">◉ <span>COSMOS<br><b>OCULTO</b></span></a><p class="eyebrow">ESTÚDIO DE PRODUÇÃO</p><button class="nav" id="home">Meus projetos</button><div id="navigation" hidden><p class="eyebrow" id="projectid"></p><button class="nav" data-tab="overview">Visão geral</button><button class="nav" data-tab="script">1 · Roteiro</button><button class="nav" data-tab="audio">2 · Áudio do Dark Planner</button><button class="nav" data-tab="story">3 · Cenas pela fala</button><button class="nav" data-tab="images">4 · Imagens</button><button class="nav" data-tab="export">5 · Montagem e arquivos</button><button class="nav" data-tab="audits">Auditorias e tarefas</button></div><div class="sidefoot">COAE <span>0.2</span><small>Uma cena para cada ideia.</small></div></aside><main><header><span id="crumb">Workspace / Projetos</span><span class="badge" id="mode">Assistido</span></header><div id="notice" role="status" hidden></div><div id="content"></div><footer>A voz é gerada por você no Dark Planner. O áudio importado orienta os tempos. Cenas com duração variável; sem blocos fixos de 8 segundos.</footer></main><dialog id="review"><form method="dialog"><h2>Registrar revisão</h2><p id="reviewlabel"></p><textarea id="reviewnote" required minlength="10" placeholder="Descreva o que você conferiu."></textarea><div class="actions"><button value="cancel" class="secondary">Cancelar</button><button value="ok" id="reviewconfirm">Aprovar esta versão</button></div></form></dialog><script src="/app.js"></script></body></html>
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080B12">
+  <title>Cosmos Oculto · Estúdio de produção</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <aside aria-label="Navegação principal">
+    <a class="brand" href="/" aria-label="Cosmos Oculto — Documentários do Universo">
+      <span class="brand-mark" aria-hidden="true"><i></i></span>
+      <span class="brand-name">COSMOS <b>OCULTO</b><small>Documentários do Universo</small></span>
+    </a>
+    <p class="eyebrow">PROJETOS</p>
+    <button class="nav" id="home"><span aria-hidden="true">⌂</span> Meus projetos</button>
+    <div id="navigation" hidden>
+      <p class="project-code" id="projectid"></p>
+      <p class="nav-group">PROJETO</p>
+      <button class="nav" data-tab="overview"><span aria-hidden="true">◫</span> Visão geral</button>
+      <p class="nav-group">PREPARAÇÃO</p>
+      <button class="nav" data-tab="script"><span aria-hidden="true">Ⅰ</span> Roteiro</button>
+      <button class="nav" data-tab="audio"><span aria-hidden="true">Ⅱ</span> Áudio do Dark Planner</button>
+      <button class="nav" data-tab="story"><span aria-hidden="true">Ⅲ</span> Cenas pela fala</button>
+      <p class="nav-group">ESTÚDIO</p>
+      <button class="nav" data-tab="images"><span aria-hidden="true">Ⅳ</span> Imagens</button>
+      <p class="nav-group">MONTAGEM</p>
+      <button class="nav" data-tab="export"><span aria-hidden="true">Ⅴ</span> Montagem e arquivos</button>
+      <p class="nav-group">REFERÊNCIAS</p>
+      <button class="nav" data-tab="audits"><span aria-hidden="true">◎</span> Auditorias e tarefas</button>
+    </div>
+    <div class="sidefoot"><span>COAE 0.2</span><small>Uma cena para cada ideia.</small></div>
+  </aside>
+  <main>
+    <header><span id="crumb">Workspace / Projetos</span><span class="badge" id="mode">Assistido</span></header>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <div id="content"></div>
+    <footer>A voz é gerada por você no Dark Planner. O áudio importado orienta os tempos. Cenas com duração variável; sem blocos fixos de 8 segundos.</footer>
+  </main>
+  <dialog id="review"><form method="dialog"><h2>Registrar revisão</h2><p id="reviewlabel"></p><textarea id="reviewnote" required minlength="10" placeholder="Descreva o que você conferiu."></textarea><div class="actions"><button value="cancel" class="secondary">Cancelar</button><button value="ok" id="reviewconfirm">Aprovar esta versão</button></div></form></dialog>
+  <script src="/app.js"></script>
+</body>
+</html>

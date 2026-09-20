@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import ExitStack, closing
 import tempfile
 import unittest
 import wave
@@ -17,9 +18,9 @@ from coae.transcription import JsonTranscriptProvider
 
 class CoreWorkflowTests(unittest.TestCase):
     def test_script_exports_are_distinct_and_persisted(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as resources:
             root = Path(directory)
-            database = Database(root / "coae.sqlite3")
+            database = resources.enter_context(closing(Database(root / "coae.sqlite3")))
             database.create_project("COAE-TEST", "Buracos negros")
             version = save_script(database, "COAE-TEST", "Buracos negros", 'Primeiro parágrafo. <break time="1.5s"/>\n\nSegundo parágrafo.')
             with self.assertRaises(Exception):
@@ -31,22 +32,22 @@ class CoreWorkflowTests(unittest.TestCase):
             self.assertEqual(database.connection.execute("SELECT COUNT(*) FROM scripts").fetchone()[0], 1)
 
     def test_project_and_script_state_can_be_reopened(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as resources:
             database_path = Path(directory) / "coae.sqlite3"
-            first = Database(database_path)
+            first = resources.enter_context(closing(Database(database_path)))
             first.create_project("COAE-REOPEN", "Projeto retomável")
             save_script(first, "COAE-REOPEN", "Roteiro", "Versão inicial")
             first.close()
-            reopened = Database(database_path)
+            reopened = resources.enter_context(closing(Database(database_path)))
             project = reopened.get_project("COAE-REOPEN")
             script = reopened.connection.execute("SELECT body, approved FROM scripts WHERE project_id = ?", (project["id"],)).fetchone()
             self.assertEqual(script["body"], "Versão inicial")
             self.assertEqual(script["approved"], 0)
 
     def test_only_approved_script_version_is_exported(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as resources:
             root = Path(directory)
-            database = Database(root / "coae.sqlite3")
+            database = resources.enter_context(closing(Database(root / "coae.sqlite3")))
             database.create_project("COAE-VERSIONS", "Versionamento")
             first = save_script(database, "COAE-VERSIONS", "Roteiro", "Versão um")
             second = save_script(database, "COAE-VERSIONS", "Roteiro", "Versão dois")
@@ -61,7 +62,7 @@ class CoreWorkflowTests(unittest.TestCase):
             self.assertIn("Versão dois", files["narration_clean"].read_text(encoding="utf-8"))
 
     def test_wav_import_preserves_original_and_measures_duration(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as resources:
             root = Path(directory)
             source = root / "narration.wav"
             with wave.open(str(source), "wb") as audio:
@@ -69,7 +70,7 @@ class CoreWorkflowTests(unittest.TestCase):
                 audio.setsampwidth(2)
                 audio.setframerate(8000)
                 audio.writeframes(b"\0\0" * 8000)
-            database = Database(root / "coae.sqlite3")
+            database = resources.enter_context(closing(Database(root / "coae.sqlite3")))
             database.create_project("COAE-TEST", "Teste")
             audio_id = import_audio(database, "COAE-TEST", source, root / "project")
             row = database.connection.execute("SELECT * FROM audio_files WHERE id = ?", (audio_id,)).fetchone()
@@ -78,7 +79,7 @@ class CoreWorkflowTests(unittest.TestCase):
             self.assertTrue(Path(row["working_path"]).exists())
 
     def test_transcription_to_storyboard_uses_real_timestamps(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as resources:
             root = Path(directory)
             transcript = root / "transcript.json"
             transcript.write_text(json.dumps({"segments": [{"start": 0.0, "end": 2.4, "text": "Uma estrela colapsa."}, {"start": 2.4, "end": 7.1, "text": "A luz deixa de escapar."}]}), encoding="utf-8")
@@ -86,7 +87,7 @@ class CoreWorkflowTests(unittest.TestCase):
             scenes = segment_scenes(segments, 7.1)
             self.assertAlmostEqual(scenes[0].duration, 2.4)
             self.assertAlmostEqual(scenes[1].duration, 4.7)
-            database = Database(root / "coae.sqlite3")
+            database = resources.enter_context(closing(Database(root / "coae.sqlite3")))
             database.create_project("COAE-TEST", "Teste")
             source = root / "audio.wav"
             with wave.open(str(source), "wb") as audio:

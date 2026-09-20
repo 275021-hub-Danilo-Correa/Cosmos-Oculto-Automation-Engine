@@ -12,7 +12,8 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from .application import Application,dump
 from .errors import CoaeError
-from .script_service import save_script,export_script
+from .script_service import save_script,export_script,format_dark_planner
+from .project_import import import_bundle,recover_local,local_candidates,trash_project,restore_project
 
 BASE=Path(__file__).resolve().parents[1]
 
@@ -26,11 +27,11 @@ def load_env():
 
 class Server(ThreadingHTTPServer):
     daemon_threads=True
-    def __init__(self,address,app):
+    def __init__(self,address,app,upload_dir=None):
         token=os.environ.get('COAE_ACCESS_TOKEN','').strip()
         if token and any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_' for c in token):
             raise ValueError('COAE_ACCESS_TOKEN deve conter apenas letras ASCII, números, hífen ou sublinhado.')
-        self.app=app;self.token=token or secrets.token_urlsafe(32);self.uploads={};self.temp=tempfile.TemporaryDirectory(prefix='coae-upload-');self.command_lock=threading.RLock()
+        self.app=app;self.token=token or secrets.token_urlsafe(32);self.uploads={};self.temp=tempfile.TemporaryDirectory(prefix='coae-upload-',dir=upload_dir);self.command_lock=threading.RLock()
         try:
             super().__init__(address,Handler)
         except BaseException:
@@ -56,6 +57,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             pid=q.get('project',[None])[0]
             if parsed.path=='/api/state':return self.send(self.server.app.state(pid))
+            if parsed.path=='/api/import_candidates':return self.send({'folders':local_candidates(self.server.app)})
+            if parsed.path=='/api/trash':return self.send({'projects':[dict(r) for r in self.server.app.db.rows("SELECT id,title FROM projects WHERE status='TRASHED' ORDER BY updated_at DESC")]})
             if parsed.path=='/api/download':return self.send(self.server.app.bundle(pid),mime='application/zip',filename=pid+'.zip')
             if parsed.path=='/api/file':
                 p=self.server.app.file(pid,q.get('path',[''])[0]);return self.send(p.read_bytes(),mime=mimetypes.guess_type(p.name)[0] or 'application/octet-stream')
@@ -68,7 +71,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/upload':
                 if not 0<size<=256*1024*1024:raise ValueError('Envie um arquivo de até 256 MB.')
                 ext=Path(urllib.parse.unquote(self.headers.get('X-Filename',''))).suffix.lower()
-                if ext not in ('.mp3','.m4a','.wav','.png','.jpg','.jpeg','.webp','.json'):raise ValueError('Tipo de arquivo não permitido.')
+                if ext not in ('.mp3','.m4a','.wav','.png','.jpg','.jpeg','.webp','.json','.zip'):raise ValueError('Tipo de arquivo não permitido.')
                 uid=secrets.token_hex(16);path=Path(self.server.temp.name)/(uid+ext);remaining=size
                 with path.open('wb') as f:
                     while remaining:
@@ -79,14 +82,31 @@ class Handler(BaseHTTPRequestHandler):
             if self.path!='/api/action' or not 0<size<4*1024*1024:raise ValueError('Requisição inválida.')
             d=json.loads(self.rfile.read(size));action=d.get('action');pid=d.get('project');app=self.server.app
             with self.server.command_lock:
-                if pid and app.db.one("SELECT id FROM jobs WHERE project_id=? AND status='RUNNING'",(pid,)):raise ValueError('Aguarde a tarefa em execução antes de alterar este projeto.')
+                if pid and action not in ('restore_project','trash_project') and app.db.get_project(pid)['status']=='TRASHED':raise ValueError('Restaure o projeto da lixeira antes de alterá-lo.')
+                if pid and action!='cancel_image_round' and app.db.one("SELECT id FROM jobs WHERE project_id=? AND status='RUNNING'",(pid,)):raise ValueError('Aguarde a tarefa em execução antes de alterar este projeto.')
                 if action in ('analyze','import_transcript'):
                     app.preflight_analysis(pid,d.get('semantic',False))
                 if action=='diagnose_local':
                     from .local_ai import diagnostics
                     result=app.job(pid,action,diagnostics)
                 elif action=='create':result=app.create(d['title'])
+                elif action=='recover_project':result=recover_local(app,d['folder'])
+                elif action=='trash_project':result=trash_project(app,pid)
+                elif action=='restore_project':result=restore_project(app,pid)
+                elif action=='discard_upload':
+                    path=self.server.uploads.pop(d['upload'],None)
+                    if path is not None:path.unlink(missing_ok=True)
+                    result={'message':'Importação cancelada.'}
+                elif action=='import_project':
+                    path=self.server.uploads.pop(d['upload'],None)
+                    if path is None:raise ValueError('Envie o ZIP primeiro.')
+                    try:
+                        result=import_bundle(app,path,allow_partial=d.get('allow_partial') is True)
+                        if result.get('requires_confirmation'):self.server.uploads[d['upload']]=path
+                    finally:
+                        if d['upload'] not in self.server.uploads:path.unlink(missing_ok=True)
                 elif action=='save_script':result={'version':save_script(app.db,pid,d['title'],d['body'])}
+                elif action=='format_dark_planner':result={'body':format_dark_planner(d['body'])}
                 elif action=='sources':result=app.save_sources(pid,d['text'])
                 elif action=='audit_script':result=app.job(pid,action,lambda:app.audit_script(pid,d.get('remote',False)))
                 elif action=='repair_script':result=app.job(pid,action,lambda:app.repair_script(pid))
@@ -116,7 +136,11 @@ class Handler(BaseHTTPRequestHandler):
                 elif action=='audit_story':result=app.audit_story(pid)
                 elif action=='approve_story':result=app.approve_story(pid,d['version'],d['note'])
                 elif action=='generate_images':result=app.job(pid,action,lambda:app.generate_images(pid,d.get('scene_id')))
+                elif action=='start_image_round':result=app.start_image_round(pid,d['scene_id'],d.get('count',2),d.get('reason',''))
+                elif action=='cancel_image_round':result=app.cancel_image_round(pid,d['round_id'])
                 elif action=='audit_image':result=app.job(pid,action,lambda:app.image_audit(pid,d['image_id']))
+                elif action=='improve_image':result=app.job(pid,action,lambda:app.improve_image(pid,d['image_id']))
+                elif action=='preview_scene':result=app.job(pid,action,lambda:app.preview_scene(pid,d['image_id']))
                 elif action=='approve_image':result=app.approve_image(pid,d['image_id'],d['note'])
                 elif action=='prompts':result=app.export_prompts(pid)
                 elif action=='timeline':result=app.export_timeline(pid)

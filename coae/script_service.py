@@ -27,6 +27,45 @@ def dark_planner_narration(body):
     validate_narration(body)
     return body.strip()
 
+def format_dark_planner(body):
+    """Format an editor draft without persisting or approving it."""
+    if not isinstance(body,str) or not body.strip():
+        raise ValueError('Escreva o texto que deseja padronizar.')
+    body=body.replace('\r\n','\n').replace('\r','\n')
+    body='\n'.join(line.rstrip() for line in body.split('\n'))
+    body=re.sub(r'\n{3,}','\n\n',body).strip()
+    validate_narration(body)
+    # Existing pauses express editorial decisions. Reformatting must not add
+    # another set of pauses or change their durations.
+    if BREAK.search(body):
+        return body
+    transition=re.compile(
+        r'^(?:mas|porém|no entanto|entretanto|contudo|agora|'
+        r'por outro lado|ainda assim|por fim|em resumo|'
+        r'tudo começa|é então que)\b', re.I)
+    paragraphs=re.split(r'\n\s*\n',body)
+    blocks=[]
+    for paragraph in paragraphs:
+        # Split only before a capitalized sentence; decimals and ordinary
+        # abbreviations stay intact. Line wraps inside a paragraph are spaces.
+        paragraph=re.sub(r'\s*\n\s*',' ',paragraph).strip()
+        sentences=re.split(r'(?<=[.!?])\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])',paragraph)
+        current=[]
+        for sentence in sentences:
+            previous=current[-1] if current else ''
+            abbreviation=re.search(r'\b(?:Dr|Dra|Sr|Sra|Prof|Profa|etc|[A-Z])\.$',previous)
+            if current and transition.match(sentence) and not abbreviation:
+                pause='2s' if re.match(r'^(?:mas|porém|no entanto|entretanto|contudo)\b',sentence,re.I) else '1.5s'
+                blocks.append(' '.join(current)+f' <break time="{pause}"/>')
+                current=[]
+            current.append(sentence)
+            if sentence.endswith('?'):
+                blocks.append(' '.join(current)+' <break time="2s"/>')
+                current=[]
+        if current:
+            blocks.append(' '.join(current)+' <break time="1.5s"/>')
+    return dark_planner_narration('\n\n'.join(blocks))
+
 def save_script(database,project_id,title,body,approved=False):
     database.get_project(project_id)
     if not title.strip() or not body.strip():raise ValueError('Título e roteiro não podem ficar vazios.')

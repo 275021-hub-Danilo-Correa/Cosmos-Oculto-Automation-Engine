@@ -49,7 +49,9 @@ def workspace_lock(workspace):
 def running_server(workspace, host='127.0.0.1', port=8765):
     with workspace_lock(workspace) as root:
         # Bind before Application: a busy port must not mark persisted jobs interrupted.
-        server = Server((host, port), None)
+        uploads = root / 'workspace' / 'uploads'
+        uploads.mkdir(parents=True, exist_ok=True)
+        server = Server((host, port), None, upload_dir=uploads)
         server.daemon_threads = False  # Finish accepted requests before closing SQLite.
         app = None
         thread = None

@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY,project_id TEXT REFEREN
 CREATE TABLE IF NOT EXISTS jobs(id INTEGER PRIMARY KEY,project_id TEXT REFERENCES projects(id),action TEXT NOT NULL,status TEXT NOT NULL,result TEXT DEFAULT '{}',created_at TEXT DEFAULT CURRENT_TIMESTAMP);
 CREATE UNIQUE INDEX IF NOT EXISTS one_running_job ON jobs(project_id) WHERE status='RUNNING';
 CREATE TABLE IF NOT EXISTS api_calls(id INTEGER PRIMARY KEY,project_id TEXT REFERENCES projects(id),role TEXT,status TEXT,metadata TEXT DEFAULT '{}',created_at TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS image_rounds(id INTEGER PRIMARY KEY AUTOINCREMENT,project_id TEXT NOT NULL REFERENCES projects(id),storyboard_id INTEGER NOT NULL REFERENCES storyboards(id),scene_id TEXT NOT NULL,round_number INTEGER NOT NULL,requested INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'QUEUED',rejection_reason TEXT NOT NULL DEFAULT '',recommendation_image_id INTEGER REFERENCES images(id),recommendation_summary TEXT NOT NULL DEFAULT '',cancel_requested INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,completed_at TEXT,UNIQUE(storyboard_id,scene_id,round_number));
+CREATE TABLE IF NOT EXISTS image_candidates(id INTEGER PRIMARY KEY AUTOINCREMENT,round_id INTEGER NOT NULL REFERENCES image_rounds(id),candidate_number INTEGER NOT NULL,image_id INTEGER REFERENCES images(id),audit_id INTEGER REFERENCES audit_runs(id),seed INTEGER NOT NULL,prompt TEXT NOT NULL,negative_prompt TEXT NOT NULL DEFAULT '',workflow TEXT NOT NULL,model TEXT NOT NULL,prompt_id TEXT,preview_path TEXT,status TEXT NOT NULL DEFAULT 'QUEUED',stage TEXT NOT NULL DEFAULT 'Na fila',progress REAL,error TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(round_id,candidate_number));
+CREATE INDEX IF NOT EXISTS image_round_project ON image_rounds(project_id,storyboard_id,scene_id,id);
+CREATE UNIQUE INDEX IF NOT EXISTS image_seed_once ON image_candidates(seed);
 '''
 
 class Database:
@@ -35,7 +39,7 @@ class Database:
         self.connection.executescript(SCHEMA)
         # Additive migration from the uploaded 0.1 schema; do not delete user data.
         with self.transaction():
-            additions={'projects':{'root_path':'TEXT'},'scripts':{'updated_at':'TEXT'},'audio_files':{'script_id':'INTEGER REFERENCES scripts(id)'},'exports':{'source_ref':'TEXT'}}
+            additions={'projects':{'root_path':'TEXT'},'scripts':{'updated_at':'TEXT'},'audio_files':{'script_id':'INTEGER REFERENCES scripts(id)'},'exports':{'source_ref':'TEXT'},'image_candidates':{'audit_id':'INTEGER REFERENCES audit_runs(id)','negative_prompt':"TEXT NOT NULL DEFAULT ''",'preview_path':'TEXT'}}
             for table,columns in additions.items():
                 current={r[1] for r in self.connection.execute(f'PRAGMA table_info({table})')}
                 for name,kind in columns.items():
@@ -76,7 +80,7 @@ class Database:
         row=self.one('SELECT * FROM projects WHERE id=?',(project_id,))
         if row is None:raise ProjectNotFoundError(f'Projeto inexistente: {project_id}')
         return row
-    def list_projects(self):return self.rows('SELECT * FROM projects ORDER BY updated_at DESC,id')
+    def list_projects(self):return self.rows("SELECT * FROM projects WHERE status!='TRASHED' ORDER BY updated_at DESC,id")
     def update_project_timestamp(self,project_id):
         self.get_project(project_id);self.execute('UPDATE projects SET updated_at=CURRENT_TIMESTAMP WHERE id=?',(project_id,))
     def save_scene(self,project_id,scene,version):

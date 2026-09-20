@@ -10,7 +10,34 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 from .provider import SYSTEM
+from .visual_style import realistic_prompt, NON_REALISTIC_NEGATIVE
+
+
+VISUAL_AUDIT_SCHEMA = {
+    'type': 'object', 'additionalProperties': False,
+    'required': ['observation', 'judgment'],
+    'properties': {
+        'observation': {'type': 'object', 'additionalProperties': False,
+                        'required': ['summary', 'visible_elements', 'uncertainties'],
+                        'properties': {
+                            'summary': {'type': 'string'},
+                            'visible_elements': {'type': 'array', 'items': {'type': 'string'}},
+                            'uncertainties': {'type': 'string'},
+                        }},
+        'judgment': {'type': 'object', 'additionalProperties': False,
+                     'required': ['speech_match', 'missing_contradictory', 'science',
+                                  'visual_quality', 'suggestions'],
+                     'properties': {key: {'type': 'object', 'additionalProperties': False,
+                                          'required': ['message', 'severity'],
+                                          'properties': {
+                                              'message': {'type': 'string'},
+                                              'severity': {'type': 'string', 'enum': ['error', 'review', 'warning']},
+                                          }} for key in ('speech_match', 'missing_contradictory', 'science',
+                                                        'visual_quality', 'suggestions')}},
+    },
+}
 
 
 def backend(kind):
@@ -74,11 +101,14 @@ class Ollama:
         self.writer = os.getenv('COAE_LOCAL_WRITER_MODEL', '').strip()
         self.auditor = os.getenv('COAE_LOCAL_AUDITOR_MODEL', '').strip() or self.writer
         self.vision = os.getenv('COAE_LOCAL_VISION_MODEL', '').strip()
+        self.vision_context = os.getenv('COAE_LOCAL_VISION_CONTEXT', '').strip()
         self.timeout = timeout_seconds()
         if not self.writer:
             raise ValueError('Configure COAE_LOCAL_WRITER_MODEL com o nome de um modelo instalado no Ollama.')
 
     def check(self, vision=False):
+        if vision and not self.vision:
+            raise ValueError('Auditoria visual não configurada: defina COAE_LOCAL_VISION_MODEL com um modelo Ollama que aceite imagens. O modelo de texto não substitui um modelo visual.')
         tags = self.http.request('/api/tags')
         names = {r.get('name') for r in tags.get('models', []) if isinstance(r, dict)}
         selected = {self.vision} if vision else {self.writer, self.auditor}
@@ -103,11 +133,23 @@ class Ollama:
             if len(image[0]) > 10 * 1024 * 1024:
                 raise ValueError('Imagem excede 10 MB para auditoria.')
             message['images'] = [base64.b64encode(image[0]).decode('ascii')]
+            message['content'] += ('\nResponda em português seguindo este schema. observation descreve somente pixels; '
+                                   'judgment compara essa observação com o contexto. Não repita campos, não invente campos '
+                                   'nem transforme ausência de contexto em erro: ' + json.dumps(VISUAL_AUDIT_SCHEMA))
+        options = {'temperature': .2 if audit else .6}
+        if image and self.vision_context:
+            try:
+                context = int(self.vision_context)
+            except ValueError:
+                raise ValueError('COAE_LOCAL_VISION_CONTEXT deve ser inteiro entre 512 e 32768.') from None
+            if not 512 <= context <= 32768:
+                raise ValueError('COAE_LOCAL_VISION_CONTEXT deve estar entre 512 e 32768.')
+            options['num_ctx'] = context
         result = self.http.request('/api/chat', {
             'model': self.vision if image else self.auditor if audit else self.writer,
             'messages': [{'role': 'system', 'content': SYSTEM}, message],
-            'format': 'json', 'stream': False, 'keep_alive': 0,
-            'options': {'temperature': .2 if audit else .6},
+            'format': VISUAL_AUDIT_SCHEMA if image else 'json', 'stream': False, 'keep_alive': 0,
+            'options': options,
         }, timeout=self.timeout)
         try:
             if not result.get('done') or result.get('done_reason') == 'length':
@@ -167,11 +209,46 @@ class ComfyUI:
                     raise ValueError('Checkpoint do workflow não instalado. Ajuste ckpt_name para um arquivo disponível no ComfyUI.')
         return {'message': 'ComfyUI acessível e checkpoint encontrado. Ainda é necessário gerar uma imagem para validar a GPU.'}
 
-    def generate(self, prompt, ticket, persist):
+    def metadata(self):
+        checkpoints = [str(n['inputs'].get('ckpt_name', '')) for n in self.workflow.values()
+                       if n['class_type'] == 'CheckpointLoaderSimple']
+        return {'workflow': json.dumps(self.workflow, ensure_ascii=False, sort_keys=True),
+                'model': checkpoints[0] if checkpoints else 'não identificado'}
+
+    def generate(self, prompt, ticket, persist, seed=None, progress=None, cancelled=None, negative_extra=''):
         workflow = json.loads(json.dumps(self.workflow))
-        workflow[self.positive]['inputs']['text'] = prompt
+        workflow[self.positive]['inputs']['text'] = realistic_prompt(prompt)
+        # Apply exclusions to the actual negative conditioning of each sampler,
+        # preserving the user's existing negative prompt and workflow file.
+        negative_nodes = set()
+        for node in workflow.values():
+            if node['class_type'] != 'KSampler':
+                continue
+            link = node['inputs'].get('negative')
+            if not isinstance(link, list) or len(link) != 2:
+                raise ValueError('Workflow precisa de condicionamento negativo para impor o estilo realista.')
+            key = str(link[0])
+            if key == self.positive or workflow.get(key, {}).get('class_type') != 'CLIPTextEncode':
+                raise ValueError('Use um CLIPTextEncode negativo separado do prompt positivo.')
+            negative_nodes.add(key)
+        for key in negative_nodes:
+            inputs = workflow[key]['inputs']
+            inputs['text'] = str(inputs.get('text', '')) + ', ' + NON_REALISTIC_NEGATIVE
+            if negative_extra:inputs['text'] += ', ' + negative_extra
+        if seed is not None:
+            for node in workflow.values():
+                if node['class_type'] == 'KSampler':node['inputs']['seed'] = int(seed)
+                elif node['class_type'] == 'SaveImage':node['inputs']['filename_prefix'] = 'COAE_'+str(int(seed))
         # Fingerprint binds resumed output to both server and exact workflow.
         fingerprint = hashlib.sha256(json.dumps([self.http.url, workflow], sort_keys=True).encode()).hexdigest()
+        ws=None
+        client_id=(ticket or {}).get('client_id') or uuid.uuid4().hex
+        try:
+            from websockets.sync.client import connect
+            ws_url=self.http.url.replace('http://','ws://',1)+'/ws?'+urllib.parse.urlencode({'clientId':client_id})
+            ws=connect(ws_url,open_timeout=3,close_timeout=1,max_size=16*1024*1024)
+        except Exception:
+            ws=None
         if ticket:
             if ticket.get('fingerprint') != fingerprint:
                 raise ValueError('Configuração mudou durante uma geração pendente. Reconcilie o ticket em logs/local_images antes de continuar.')
@@ -179,16 +256,26 @@ class ComfyUI:
                 raise ValueError('Envio anterior sem confirmação. Confira a fila do ComfyUI e o ticket em logs/local_images; não será reenviado automaticamente.')
         else:
             self.check()
-            ticket = {'fingerprint': fingerprint, 'status': 'SUBMITTING'}
+            ticket = {'fingerprint': fingerprint, 'status': 'SUBMITTING','client_id':client_id}
             persist(ticket)  # Mark before submitting: no duplicate after ambiguous failure.
-            result = self.http.request('/prompt', {'prompt': workflow})
+            result = self.http.request('/prompt', {'prompt': workflow,'client_id':client_id})
             if result.get('error') or result.get('node_errors') or not isinstance(result.get('prompt_id'), str):
                 raise ValueError('ComfyUI rejeitou o workflow. Confira os nós no ComfyUI e reconcilie o ticket.')
             ticket.update(prompt_id=result['prompt_id'], status='QUEUED')
             persist(ticket)
         prompt_id = ticket['prompt_id']
+        if progress:progress('Na fila', None, prompt_id)
         deadline = time.monotonic() + self.timeout
         while time.monotonic() < deadline:
+            if cancelled and cancelled():
+                try:
+                    queue=self.http.request('/queue')
+                    running={str(x[1]) for x in queue.get('queue_running',[]) if isinstance(x,list) and len(x)>1}
+                    route='/interrupt' if prompt_id in running else '/queue'
+                    self.http.request(route, {} if route=='/interrupt' else {'delete':[prompt_id]})
+                finally:
+                    ticket['status']='CANCELLED';persist(ticket)
+                raise InterruptedError('Geração cancelada pelo usuário.')
             history = self.http.request('/history/' + urllib.parse.quote(prompt_id, safe=''))
             result = history.get(prompt_id)
             if result:
@@ -211,9 +298,35 @@ class ComfyUI:
                     except (OSError, SyntaxError):
                         raise ValueError('ComfyUI retornou um arquivo de imagem inválido.') from None
                     ticket['status'] = 'DONE'; persist(ticket)
+                    if progress:progress('Concluída', 1.0, prompt_id)
+                    if ws:ws.close()
                     return out.getvalue(), {'provider': 'comfyui', 'prompt_id': prompt_id}
                 if status.get('completed'):
                     raise ValueError('Workflow terminou sem imagem no nó de saída configurado.')
+            event_received=False
+            if ws:
+                try:
+                    message=ws.recv(timeout=.25);event_received=True
+                    if isinstance(message,str):
+                        event=json.loads(message);kind=event.get('type');data=event.get('data',{})
+                        if data.get('prompt_id') in (None,prompt_id):
+                            if kind=='progress':
+                                maximum=data.get('max');value=data.get('value')
+                                ratio=value/maximum if isinstance(value,(int,float)) and isinstance(maximum,(int,float)) and maximum>0 else None
+                                if progress:progress('Amostrando no ComfyUI',ratio,prompt_id)
+                            elif kind=='executing' and progress:progress('Executando nó '+str(data.get('node') or ''),None,prompt_id)
+                    elif isinstance(message,bytes) and len(message)>8 and int.from_bytes(message[:4],'big') in (1,4):
+                        if progress:progress('Prévia real do ComfyUI',None,prompt_id,message[8:])
+                except TimeoutError:pass
+                except Exception:
+                    try:ws.close()
+                    except Exception:pass
+                    ws=None
+            if progress and not event_received:
+                queue=self.http.request('/queue')
+                running={str(x[1]) for x in queue.get('queue_running',[]) if isinstance(x,list) and len(x)>1}
+                pending={str(x[1]) for x in queue.get('queue_pending',[]) if isinstance(x,list) and len(x)>1}
+                progress('Gerando no ComfyUI' if prompt_id in running else 'Na fila do ComfyUI' if prompt_id in pending else 'Aguardando evento do ComfyUI',None,prompt_id)
             time.sleep(1)
         raise ValueError('Tempo de espera esgotado; a tarefa pode continuar no ComfyUI. Clique novamente para consultar o mesmo ticket sem reenviar.')
 

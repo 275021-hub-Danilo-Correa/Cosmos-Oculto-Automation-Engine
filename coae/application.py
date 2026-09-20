@@ -14,6 +14,7 @@ import zipfile
 from dataclasses import asdict,fields,replace
 from .errors import CoaeError
 from .local_ai import backend, Ollama, ComfyUI
+from .visual_style import realistic_prompt, REALISM_INSTRUCTION, CHANNEL_AUDIT_INSTRUCTION
 from .audio import import_audio,verified_audio,file_sha256
 from .models import Scene,TranscriptSegment
 from .pipeline import transcribe_and_build_storyboard
@@ -82,9 +83,10 @@ class Application:
         if approved and row['status']!='APPROVED':raise ValueError('Revise e aprove o storyboard antes de gerar imagens.')
         scenes=[Scene(**json.loads(r['payload'])) for r in self.db.rows('SELECT payload FROM scenes WHERE project_id=? AND storyboard_version=? ORDER BY start_time,scene_id',(pid,row['version']))]
         return row,scenes
-    def store_audit(self,pid,kind,ref,issues):
+    def store_audit(self,pid,kind,ref,issues,observation=None):
         report={'decision':'BLOCKED' if any(i['severity']=='error' for i in issues) else 'REVIEW_REQUIRED','issues':issues}
-        self.db.execute('INSERT INTO audit_runs(project_id,kind,reference,report) VALUES(?,?,?,?)',(pid,kind,str(ref),dump(report)))
+        if observation is not None: report['observation']=observation
+        report['id']=self.db.execute('INSERT INTO audit_runs(project_id,kind,reference,report) VALUES(?,?,?,?)',(pid,kind,str(ref),dump(report))).lastrowid
         atomic(self.folder(pid)/'audits'/f'{kind}_{ref}_{uuid.uuid4().hex[:8]}.json',dump(report))
         return report
     @staticmethod
@@ -93,6 +95,29 @@ class Application:
         for i in value['issues']:
             if not isinstance(i,dict) or i.get('severity') not in ('error','review','warning') or not all(isinstance(i.get(k),str) for k in ('code','message')):raise ValueError('Critério de auditoria inválido.')
         return value['issues']
+    @staticmethod
+    def visual_audit_result(value):
+        names={'speech_match':'SPEECH_MATCH','missing_contradictory':'MISSING_CONTRADICTORY',
+               'science':'SCIENCE','visual_quality':'VISUAL_QUALITY','suggestions':'SUGGESTIONS'}
+        if not isinstance(value,dict) or set(value)!={'observation','judgment'}:
+            raise ValueError('Auditor devolveu estrutura visual inválida; nenhuma aprovação concedida.')
+        observation=value['observation'];judgment=value['judgment']
+        if (not isinstance(observation,dict) or set(observation)!={'summary','visible_elements','uncertainties'}
+                or not isinstance(observation['summary'],str) or not observation['summary'].strip()
+                or not isinstance(observation['uncertainties'],str) or not isinstance(observation['visible_elements'],list)
+                or not all(isinstance(item,str) and item.strip() for item in observation['visible_elements'])):
+            raise ValueError('Observação visual inválida.')
+        if not isinstance(judgment,dict) or set(judgment)!=set(names):
+            raise ValueError('Julgamento visual incompleto; nenhuma aprovação concedida.')
+        issues=[]
+        for field,code in names.items():
+            item=judgment[field]
+            if (not isinstance(item,dict) or set(item)!={'message','severity'}
+                    or item['severity'] not in ('error','review','warning')
+                    or not isinstance(item['message'],str) or not item['message'].strip()):
+                raise ValueError(f'Julgamento visual inválido em {code}.')
+            issues.append({'code':code,'message':item['message'],'severity':item['severity']})
+        return observation,issues
     def source_text(self,pid):
         file=self.folder(pid)/'research'/'sources.txt'
         return file.read_text(encoding='utf-8') if file.exists() else ''
@@ -126,7 +151,7 @@ class Application:
         if not report:raise ValueError('Audite o roteiro antes de aprovar.')
         if any(i['severity']=='error' for i in json.loads(report['report'])['issues']):raise ValueError('Corrija os erros apontados e audite novamente.')
         self.note(note);approve_script(self.db,pid,version);self.db.event(pid,'EDITORIAL_REVIEW',{'version':version,'note':note})
-        return {'message':'Roteiro aprovado. Exporte o texto para gerar a voz no Dark Planner.'}
+        return {'message':'Roteiro aprovado. Copie o texto do editor para gerar a voz no Dark Planner.'}
     @staticmethod
     def note(note):
         if not isinstance(note,str) or len(note.strip())<10:raise ValueError('Descreva sua revisão em pelo menos 10 caracteres.')
@@ -375,7 +400,7 @@ class Application:
         finally:client.close()
     @staticmethod
     def prompt(scene):
-        return scene.visual_description+' Documentário científico cinematográfico, atmosfera cósmica sombria, proporção 16:9. Preserve restrições físicas descritas. Sem texto, números, IDs, rótulos, logos ou marcas visíveis adicionadas.'
+        return realistic_prompt(scene.visual_description+' Documentário científico cinematográfico, proporção 16:9. Preserve restrições físicas descritas. Sem texto, números, IDs, rótulos, logos ou marcas visíveis adicionadas.')
     def import_image(self,pid,scene_id,path):
         story,scenes=self.story(pid,approved=True)
         if scene_id not in [s.scene_id for s in scenes]:raise ValueError('Cena inexistente.')
@@ -389,7 +414,7 @@ class Application:
         sha=file_sha256(Path(path));rel=Path('images')/f'{scene_id}_{story["version"]:03d}_{uuid.uuid4().hex[:10]}{Path(path).suffix.lower()}'
         target=self.folder(pid)/rel;target.parent.mkdir(exist_ok=True);shutil.copy2(path,target)
         iid=self.db.execute('INSERT INTO images(project_id,storyboard_id,scene_id,path,sha256) VALUES(?,?,?,?,?)',(pid,story['id'],scene_id,str(target),sha)).lastrowid
-        self.store_audit(pid,'image',iid,[{'code':'VISUAL_REVIEW','severity':'review','message':'Confira relação com a fala, ciência, artefatos, texto e continuidade.'}])
+        self.store_audit(pid,'image',iid,[{'code':'VISUAL_REVIEW','severity':'review','message':'Confira realismo fotográfico obrigatório, relação com a fala, ciência, artefatos, texto e continuidade. Desenhos, cartoons, anime e aparência de animação não são aceitos.'}])
         return {'image_id':iid}
     def image_audit(self,pid,iid):
         if backend('image')=='comfyui' and backend('text')!='ollama':
@@ -402,9 +427,29 @@ class Application:
         raw=Path(image['path']).read_bytes()
         from PIL import Image
         with Image.open(image['path']) as im:mime=Image.MIME[im.format]
-        value=self.remote(pid,'auditor','Audite esta imagem contra a fala e o plano visual. Verifique objetos, coerência científica, artefatos, texto indesejado e composição. Retorne {issues:[{code,message,severity:"error|review|warning"}]}.',asdict(scene),image=(raw,mime))
-        issues=self.remote_issues(value)+[{'code':'HUMAN_VISUAL','severity':'review','message':'Confira a imagem antes de aprovar.'}]
-        report=self.store_audit(pid,'image',iid,issues);self.db.execute('UPDATE images SET status=? WHERE id=?',(report['decision'],iid));return report
+        task=('Audite em português a imagem real anexada. Regra do canal: realismo fotográfico, assunto ligado à fala, composição ampla escura, sem texto, interface ou infográfico. '
+              'Descreva o que está visível; não presuma que visual_description seja a imagem. Moldura, paisagem, animal, arquitetura ou faixas sem relação com a fala são contradição bloqueante. '
+              'Em visual_function ESTABLISH avalie assunto e atmosfera; não exija mostrar todas as fases ou processos e não penalize só por essa ausência. '
+              'Retorne JSON {issues:[{code,message,severity}]} com exatamente uma entrada não vazia para cada código SPEECH_MATCH, MISSING_CONTRADICTORY, SCIENCE, VISUAL_QUALITY, SUGGESTIONS. '
+              'severity é error para conteúdo ou estilo que impeça uso, review para dúvida, warning para melhoria. Desenho, pintura, ilustração ou 3D estilizado são erro bloqueante. '
+              'Não invente, não dê nota, não aprove e não trate o parecer como prova científica.')
+        try:
+            image_context=asdict(scene)
+            image_context.update({'project_id':pid,'scene_id':image['scene_id'],'image_id':int(image['id']),
+                                  'storyboard_id':int(image['storyboard_id']),'storyboard_version':int(story['version']),
+                                  'image_sha256':image['sha256']})
+            value=self.remote(pid,'auditor',task,image_context,image=(raw,mime))
+            observation,issues=self.visual_audit_result(value)
+        except ValueError as exc:
+            raise ValueError(f'Falha técnica na auditoria visual: {exc} O estado da imagem e o parecer anterior foram preservados; isso não reprova a imagem.') from exc
+        issues=issues+[{'code':'HUMAN_VISUAL','severity':'review','message':'Parecer de IA é auxiliar, não comprovação científica. Confira a imagem, a fala e as fontes antes de aprovar.'}]
+        report=self.store_audit(pid,'image',iid,issues,observation)
+        with self.db.transaction():
+            self.db.execute('UPDATE images SET status=? WHERE id=?',(report['decision'],iid))
+            candidate_status='REJECTED' if report['decision']=='BLOCKED' else 'DONE'
+            candidate_stage='Reprovada' if candidate_status=='REJECTED' else 'Aguardando escolha'
+            self.db.execute("UPDATE image_candidates SET status=?,stage=?,error=NULL,audit_id=?,updated_at=CURRENT_TIMESTAMP WHERE image_id=?",(candidate_status,candidate_stage,report['id'],iid))
+        return report
     def generate_images(self,pid,scene_id=None):
         story,scenes=self.story(pid,approved=True)
         if scene_id:
@@ -455,7 +500,66 @@ class Application:
         if not image or image['storyboard_id']!=story['id']:raise ValueError('Imagem de outra versão.')
         if image['status']=='BLOCKED':raise ValueError('Há erro bloqueante na imagem. Corrija e reaudite.')
         if file_sha256(Path(image['path']))!=image['sha256']:raise ValueError('Imagem alterada.')
-        self.db.execute("UPDATE images SET status='APPROVED' WHERE id=?",(iid,));self.db.event(pid,'IMAGE_APPROVED',{'id':iid,'note':note});return {'message':'Imagem aprovada.'}
+        with self.db.transaction():
+            self.db.execute("UPDATE images SET status='REVIEW_REQUIRED' WHERE project_id=? AND storyboard_id=? AND scene_id=? AND status='APPROVED' AND id!=?",(pid,story['id'],image['scene_id'],iid))
+            self.db.execute("UPDATE images SET status='APPROVED' WHERE id=?",(iid,))
+            self.db.event(pid,'IMAGE_APPROVED',{'id':iid,'scene_id':image['scene_id'],'note':note})
+        return {'message':'Imagem aprovada como seleção única desta cena.'}
+
+    def start_image_round(self,pid,scene_id,count=2,reason=''):
+        from .image_rounds import create_round, process_round
+        round_id=create_round(self,pid,scene_id,count,reason)
+        result=self.job(pid,'image_round',lambda:process_round(self,round_id))
+        return {**result,'round_id':round_id,'message':'Rodada colocada na fila compartilhada.'}
+
+    def cancel_image_round(self,pid,round_id):
+        from .image_rounds import cancel_round
+        return cancel_round(self,pid,round_id)
+    def improve_image(self,pid,iid):
+        from .image_improvement import improve_image
+        return improve_image(self,pid,iid)
+    def preview_scene(self,pid,iid):
+        from .scene_preview import render
+        story,scenes=self.story(pid)
+        image=self.db.one('SELECT * FROM images WHERE id=? AND project_id=?',(iid,pid))
+        if not image or image['storyboard_id']!=story['id']:
+            raise ValueError('Selecione uma imagem da versão atual do storyboard.')
+        scene=next((s for s in scenes if s.scene_id==image['scene_id']),None)
+        if scene is None:raise ValueError('Cena inexistente nesta versão.')
+        root=self.folder(pid)
+        image_path=self.file(pid,image['path'])
+        audio=verified_audio(self.db,pid,story['audio_id'])
+        original=self.file(pid,audio['original_path'])
+        if file_sha256(image_path)!=image['sha256']:raise ValueError('Imagem alterada; prévia não gerada.')
+        if file_sha256(original)!=audio['sha256']:raise ValueError('Áudio original alterado; prévia não gerada.')
+        destination=root/'previews'/f'story_v{story["version"]:03d}'/f'{scene.scene_id}_image{iid}_{uuid.uuid4().hex[:12]}.mp4'
+        manifest=destination.with_suffix('.json')
+        if not destination.resolve().is_relative_to((root/'previews').resolve()):
+            raise ValueError('Identificador de cena inválido para criar a prévia.')
+        if destination.exists() or manifest.exists():raise ValueError('Destino já existe; arquivos preservados. Tente novamente.')
+        created=False;manifest_created=False
+        try:
+            metadata=render(image_path,original,destination,scene.start_time,scene.end_time,audio['duration'])
+            created=True
+            # Also detect edits outside COAE while FFmpeg was reading its inputs.
+            if file_sha256(image_path)!=image['sha256'] or file_sha256(original)!=audio['sha256']:
+                raise ValueError('Um original mudou durante a geração; prévia descartada.')
+            metadata.update(scene_id=scene.scene_id,storyboard_version=story['version'],
+                            image_relative_path=image_path.relative_to(root).as_posix(),image_sha256=image['sha256'],
+                            original_audio=original.relative_to(root).as_posix(),audio_sha256=audio['sha256'],
+                            scene=asdict(scene),image_status_at_creation=image['status'])
+            atomic(manifest,dump(metadata))
+            manifest_created=True
+            with self.db.transaction():
+                self.db.execute('INSERT INTO exports(project_id,kind,path,content_hash,source_ref) VALUES(?,?,?,?,?)',
+                                (pid,'scene_preview',str(destination),file_sha256(destination),dump(metadata)))
+                self.db.event(pid,'SCENE_PREVIEW_CREATED',{'scene_id':scene.scene_id,'path':destination.relative_to(root).as_posix(),'duration':metadata['duration']})
+        except Exception:
+            if created:destination.unlink(missing_ok=True)
+            if manifest_created:manifest.unlink(missing_ok=True)
+            raise
+        return {'message':'Prévia estática criada, sem alterar originais ou aprovar a imagem.',
+                'path':destination.relative_to(root).as_posix(),**metadata}
     def export_prompts(self,pid):
         story,scenes=self.story(pid,approved=True);folder=self.folder(pid)/'exports'/f'prompts_v{story["version"]:03d}'
         for offset in range(0,len(scenes),20):
@@ -513,10 +617,24 @@ class Application:
         if data['stories']:
             data['scenes']=[json.loads(r['payload']) for r in self.db.rows('SELECT payload FROM scenes WHERE project_id=? AND storyboard_version=? ORDER BY start_time,scene_id',(pid,data['stories'][0]['version']))]
         root=self.folder(pid)
+        data['previews']=[]
+        for row in self.db.rows("SELECT * FROM exports WHERE project_id=? AND kind='scene_preview' ORDER BY id DESC",(pid,)):
+            path=Path(row['path']).resolve()
+            if not path.is_relative_to(root) or not path.is_file():continue
+            try:metadata=json.loads(row['source_ref'])
+            except (TypeError,ValueError):continue
+            if isinstance(metadata,dict):
+                data['previews'].append({**metadata,'id':row['id'],'relative_path':path.relative_to(root).as_posix()})
         for rows,column in ((data['images'],'path'),(data['audios'],'working_path')):
             for row in rows:
                 path=Path(row[column]).resolve()
                 row['relative_path']=path.relative_to(root).as_posix() if path.is_relative_to(root) else None
+        data['image_rounds']=[dict(r) for r in self.db.rows('SELECT * FROM image_rounds WHERE project_id=? ORDER BY id DESC',(pid,))]
+        data['image_candidates']=[dict(r) for r in self.db.rows('SELECT c.* FROM image_candidates c JOIN image_rounds r ON r.id=c.round_id WHERE r.project_id=? ORDER BY c.round_id DESC,c.candidate_number',(pid,))]
+        for candidate in data['image_candidates']:
+            if candidate.get('preview_path'):
+                preview=Path(candidate['preview_path']).resolve()
+                candidate['preview_relative_path']=preview.relative_to(root).as_posix() if preview.is_relative_to(root) and preview.is_file() else None
         data['files']=[str(p.relative_to(root)).replace('\\','/') for p in root.rglob('*') if p.is_file()]
         data['sources']=self.source_text(pid)
         return data
